@@ -10,12 +10,23 @@ import (
 
 // zk related errors
 var (
-	ErrInvalidPub    = errors.New("Invalid pubilc key")
-	ErrInvalidPriv   = errors.New("Invalid private key")
+	curve elliptic.Curve = elliptic.P256()
+	N     *big.Int       = new(big.Int).Set(curve.Params().N)
+	Gx    *big.Int       = new(big.Int).Set(curve.Params().Gx)
+	Gy    *big.Int       = new(big.Int).Set(curve.Params().Gy)
+
 	ErrCurveNotMatch = errors.New("Ellipic curves not match")
 	ErrOutOfRange    = errors.New("Out of range")
 	ErrNotOnCurve    = errors.New("Not on curve")
 )
+
+// SetECC sets elliptic curve
+func SetECC(c elliptic.Curve) {
+	curve = c
+	N = new(big.Int).Set(curve.Params().N)
+	Gx = new(big.Int).Set(curve.Params().Gx)
+	Gy = new(big.Int).Set(curve.Params().Gy)
+}
 
 func randq(q *big.Int) (*big.Int, error) {
 	if q.Cmp(big.NewInt(0)) <= 0 {
@@ -35,7 +46,7 @@ func randq(q *big.Int) (*big.Int, error) {
 	}
 }
 
-func ecrand(curve elliptic.Curve) (*big.Int, error) {
+func ecrand() (*big.Int, error) {
 	k, err := ecdsa.GenerateKey(curve, rand.Reader)
 
 	if err != nil {
@@ -43,4 +54,12 @@ func ecrand(curve elliptic.Curve) (*big.Int, error) {
 	}
 
 	return new(big.Int).Set(k.D), nil
+}
+
+func isOnCurve(X, Y *big.Int) bool {
+	return curve.IsOnCurve(X, Y)
+}
+
+func isInRange(x *big.Int) bool {
+	return x.Cmp(big.NewInt(0)) > 0 && x.Cmp(N) < 0
 }

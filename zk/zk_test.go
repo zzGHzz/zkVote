@@ -33,18 +33,18 @@ func TestBinaryValueZK(t *testing.T) {
 	data := sha256.Sum256(common.ConcatBytesTight(a.PublicKey.X.Bytes(), a.PublicKey.Y.Bytes()))
 
 	// Generate and verify zk proof for v = 1
-	prover, err = NewBinaryProver(true, a, &k.PublicKey)
+	prover, err = NewBinaryProver(true, a.D, a.PublicKey.X, a.PublicKey.Y, k.PublicKey.X, k.PublicKey.Y)
 	assert.Nil(t, err)
 	proof, err = prover.Prove(data[:])
-	res, err = proof.Verify(&a.PublicKey, &k.PublicKey)
+	res, err = proof.Verify()
 	assert.Nil(t, err)
 	assert.True(t, res)
 
 	// Generate and verify zk proof for v = 1
-	prover, err = NewBinaryProver(false, a, &k.PublicKey)
+	prover.value = false
 	assert.Nil(t, err)
 	proof, err = prover.Prove(data[:])
-	res, err = proof.Verify(&a.PublicKey, &k.PublicKey)
+	res, err = proof.Verify()
 	assert.Nil(t, err)
 	assert.True(t, res)
 }
@@ -69,7 +69,7 @@ func TestECFS(t *testing.T) {
 	data := sha256.Sum256(common.ConcatBytesTight(x.PublicKey.X.Bytes(), x.PublicKey.Y.Bytes()))
 
 	// generate proof
-	prover, err = NewECFSProver(curve, x.D)
+	prover, err = NewECFSProver(x.D)
 	assert.Nil(t, err)
 
 	// generate proof
