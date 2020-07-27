@@ -5,6 +5,7 @@ package zk
 import (
 	"crypto/elliptic"
 	"crypto/sha256"
+	"fmt"
 	"math/big"
 
 	"github.com/zzGHzz/zkVote/common"
@@ -55,21 +56,28 @@ func (p *ECFSProver) Prove(data []byte) (*ECFSProof, error) {
 		p.yX.Bytes(), p.yY.Bytes(),
 		tX.Bytes(), tY.Bytes(),
 	))
+	fmt.Printf("%x\n", c)
 
+	// r = v - c*x
 	r := new(big.Int).SetBytes(c[:])
 	r = r.Mul(r, p.x)
+	// r = r.Mod(r, p.curve.Params().N)
 	r = r.Sub(v, r)
 	r = r.Mod(r, p.curve.Params().N)
 
 	return &ECFSProof{
 		p.curve,
-		p.yX, p.yY,
-		tX, tY,
-		r}, nil
+		new(big.Int).Set(p.yX), new(big.Int).Set(p.yY),
+		tX, tY, r}, nil
 }
 
 // Verify verifies ECFSProof
 func (p *ECFSProof) Verify(data []byte) (bool, error) {
+	// y must be on curve
+	if !p.curve.IsOnCurve(p.yX, p.yY) {
+		return false, errNotOnCurve
+	}
+
 	// t must be on curve
 	if !p.curve.IsOnCurve(p.tX, p.tY) {
 		return false, errNotOnCurve
@@ -87,11 +95,12 @@ func (p *ECFSProof) Verify(data []byte) (bool, error) {
 		p.yX.Bytes(), p.yY.Bytes(),
 		p.tX.Bytes(), p.tY.Bytes(),
 	))
+	fmt.Printf("%x\n", c)
 
 	// check t = (g^r)(y^c)
 	X1, Y1 := p.curve.ScalarBaseMult(p.r.Bytes())
 	X2, Y2 := p.curve.ScalarMult(p.yX, p.yY, new(big.Int).SetBytes(c[:]).Bytes())
-	X1, Y2 = p.curve.Add(X1, Y1, X2, Y2)
+	X1, Y1 = p.curve.Add(X1, Y1, X2, Y2)
 	if X1.Cmp(p.tX) != 0 || Y1.Cmp(p.tY) != 0 {
 		return false, nil
 	}
