@@ -233,7 +233,7 @@ func (p *BinaryProof) Verify() (bool, error) {
 		return false, nil
 	}
 
-	var X, Y, X1, Y1, X2, Y2, X3, Y3 *big.Int
+	var X, Y, X1, Y1, X2, Y2 *big.Int
 
 	// a1 = g^{r1 + d1*a}
 	X1, Y1 = curve.ScalarBaseMult(p.r1.Bytes())
@@ -261,10 +261,13 @@ func (p *BinaryProof) Verify() (bool, error) {
 
 	// b2 = g^{k*r2} (y/g)^d2
 	X1, Y1 = curve.ScalarMult(p.gkX, p.gkY, p.r2.Bytes())
-	X2, Y2 = curve.ScalarMult(p.yX, p.yY, p.d2.Bytes())
-	X3, Y3 = curve.ScalarBaseMult(new(big.Int).Sub(N, p.d2).Bytes())
+	//X2, Y2 = curve.ScalarMult(p.yX, p.yY, p.d2.Bytes())
+	//X3, Y3 = curve.ScalarBaseMult(new(big.Int).Sub(N, p.d2).Bytes())
+	//X, Y = curve.Add(X1, Y1, X2, Y2)
+	//X, Y = curve.Add(X, Y, X3, Y3)
+	X2, Y2 = curve.Add(p.yX, p.yY, Gx, new(big.Int).Sub(curve.Params().P, Gy))
+	X2, Y2 = curve.ScalarMult(X2, Y2, p.d2.Bytes())
 	X, Y = curve.Add(X1, Y1, X2, Y2)
-	X, Y = curve.Add(X, Y, X3, Y3)
 	if p.b2X.Cmp(X) != 0 || p.b2Y.Cmp(Y) != 0 {
 		return false, nil
 	}
