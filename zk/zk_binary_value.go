@@ -1,3 +1,7 @@
+// Prove v\in{0,1} given g^a, ((g^k)^a)(g^v)
+// 	a 		- a known secret key
+//	g^k 	- a known public key
+
 package zk
 
 import (
@@ -5,7 +9,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
-	"errors"
 	"math/big"
 
 	"github.com/zzGHzz/zkVote/common"
@@ -29,19 +32,10 @@ type BinaryProof struct {
 	a2X, a2Y, b2X, b2Y *big.Int
 }
 
-var (
-	errNilGK         = errors.New("Nil g^k")
-	errInvalidPub    = errors.New("Invalid pubilc key")
-	errInvalidPriv   = errors.New("Invalid private key")
-	errCurveNotMatch = errors.New("Ellipic curves not match")
-	errOutOfRange    = errors.New("Out of range")
-	errNotOnCurve    = errors.New("Not on curve")
-)
-
 // NewBinaryProver - new Prover
 func NewBinaryProver(value bool, a *ecdsa.PrivateKey, gk *ecdsa.PublicKey) (*BinaryProver, error) {
 	if gk == nil {
-		return nil, errNilGK
+		return nil, errNil
 	}
 
 	if !gk.Curve.IsOnCurve(gk.X, gk.Y) {
@@ -86,10 +80,10 @@ func (p *BinaryProver) Prove(data []byte) (*BinaryProof, error) {
 
 	var X1, Y1, X2, Y2, X3, Y3 *big.Int
 	if !p.value {
-		if r2, err = randq(N); err != nil {
+		if r2, err = ecrand(p.curve); err != nil {
 			return nil, err
 		}
-		if d2, err = randq(N); err != nil {
+		if d2, err = ecrand(p.curve); err != nil {
 			return nil, err
 		}
 
@@ -139,10 +133,10 @@ func (p *BinaryProver) Prove(data []byte) (*BinaryProof, error) {
 		r1 = r1.Sub(w, r1)
 		r1 = r1.Mod(r1, N)
 	} else {
-		if r1, err = randq(N); err != nil {
+		if r1, err = ecrand(p.curve); err != nil {
 			return nil, err
 		}
-		if d1, err = randq(N); err != nil {
+		if d1, err = ecrand(p.curve); err != nil {
 			return nil, err
 		}
 
@@ -298,22 +292,4 @@ func (p *BinaryProof) Verify(pa *ecdsa.PublicKey, pk *ecdsa.PublicKey) (bool, er
 	}
 
 	return true, nil
-}
-
-func randq(q *big.Int) (*big.Int, error) {
-	if q.Cmp(big.NewInt(0)) <= 0 {
-		return nil, errors.New("Negative input")
-	}
-
-	for {
-		r, err := rand.Int(rand.Reader, q)
-		if err != nil {
-			return nil, err
-		}
-
-		// >0
-		if r.Cmp(big.NewInt(0)) == 1 {
-			return r, nil
-		}
-	}
 }
