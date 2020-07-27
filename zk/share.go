@@ -8,13 +8,13 @@ import (
 	"math/big"
 )
 
+// zk related errors
 var (
-	errNil           = errors.New("Nil input")
-	errInvalidPub    = errors.New("Invalid pubilc key")
-	errInvalidPriv   = errors.New("Invalid private key")
-	errCurveNotMatch = errors.New("Ellipic curves not match")
-	errOutOfRange    = errors.New("Out of range")
-	errNotOnCurve    = errors.New("Not on curve")
+	ErrInvalidPub    = errors.New("Invalid pubilc key")
+	ErrInvalidPriv   = errors.New("Invalid private key")
+	ErrCurveNotMatch = errors.New("Ellipic curves not match")
+	ErrOutOfRange    = errors.New("Out of range")
+	ErrNotOnCurve    = errors.New("Not on curve")
 )
 
 func randq(q *big.Int) (*big.Int, error) {

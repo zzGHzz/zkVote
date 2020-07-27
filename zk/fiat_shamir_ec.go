@@ -29,7 +29,7 @@ type ECFSProof struct {
 func NewECFSProver(curve elliptic.Curve, x *big.Int) (*ECFSProver, error) {
 	// check the range of k
 	if x.Cmp(big.NewInt(0)) <= 0 || x.Cmp(curve.Params().N) >= 0 {
-		return nil, errOutOfRange
+		return nil, ErrOutOfRange
 	}
 
 	// y = g^k
@@ -75,17 +75,17 @@ func (p *ECFSProver) Prove(data []byte) (*ECFSProof, error) {
 func (p *ECFSProof) Verify(data []byte) (bool, error) {
 	// y must be on curve
 	if !p.curve.IsOnCurve(p.yX, p.yY) {
-		return false, errNotOnCurve
+		return false, ErrNotOnCurve
 	}
 
 	// t must be on curve
 	if !p.curve.IsOnCurve(p.tX, p.tY) {
-		return false, errNotOnCurve
+		return false, ErrNotOnCurve
 	}
 
 	// r must be in range
 	if p.r.Cmp(big.NewInt(0)) <= 0 || p.r.Cmp(p.curve.Params().N) >= 0 {
-		return false, errOutOfRange
+		return false, ErrOutOfRange
 	}
 
 	// c = hash(data, g, y, t)

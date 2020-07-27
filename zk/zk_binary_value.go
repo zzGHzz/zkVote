@@ -9,6 +9,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"math/big"
 
 	"github.com/zzGHzz/zkVote/common"
@@ -35,11 +36,11 @@ type BinaryProof struct {
 // NewBinaryProver - new Prover
 func NewBinaryProver(value bool, a *ecdsa.PrivateKey, gk *ecdsa.PublicKey) (*BinaryProver, error) {
 	if gk == nil {
-		return nil, errNil
+		return nil, errors.New("gk cannot be nil")
 	}
 
 	if !gk.Curve.IsOnCurve(gk.X, gk.Y) {
-		return nil, errInvalidPub
+		return nil, ErrInvalidPub
 	}
 
 	if a == nil {
@@ -50,11 +51,11 @@ func NewBinaryProver(value bool, a *ecdsa.PrivateKey, gk *ecdsa.PublicKey) (*Bin
 		}
 	} else {
 		if a.PublicKey.Curve != gk.Curve {
-			return nil, errCurveNotMatch
+			return nil, ErrCurveNotMatch
 		}
 
 		if a.D.Cmp(a.PublicKey.Curve.Params().N) >= 0 || a.D.Cmp(big.NewInt(1)) == -1 {
-			return nil, errInvalidPriv
+			return nil, ErrInvalidPriv
 		}
 	}
 
@@ -199,7 +200,7 @@ func (p *BinaryProof) Validate(curve elliptic.Curve) error {
 		p.r2.Cmp(big.NewInt(1)) < 0 || p.r2.Cmp(curve.Params().N) >= 0 ||
 		p.d1.Cmp(big.NewInt(1)) < 0 || p.d1.Cmp(curve.Params().N) >= 0 ||
 		p.d2.Cmp(big.NewInt(1)) < 0 || p.d2.Cmp(curve.Params().N) >= 0 {
-		return errOutOfRange
+		return ErrOutOfRange
 	}
 
 	// a1, a2, b1, b2 must on curve
@@ -207,7 +208,7 @@ func (p *BinaryProof) Validate(curve elliptic.Curve) error {
 		!curve.IsOnCurve(p.a2X, p.a2Y) ||
 		!curve.IsOnCurve(p.b1X, p.b1Y) ||
 		!curve.IsOnCurve(p.b2X, p.b2Y) {
-		return errNotOnCurve
+		return ErrNotOnCurve
 	}
 
 	return nil
@@ -225,12 +226,12 @@ func (p *BinaryProof) Verify(pa *ecdsa.PublicKey, pk *ecdsa.PublicKey) (bool, er
 	}
 
 	if pa.Curve != pk.Curve {
-		return false, errCurveNotMatch
+		return false, ErrCurveNotMatch
 	}
 
 	curve := pa.Curve
 	if !curve.IsOnCurve(pa.X, pa.Y) || !curve.IsOnCurve(pk.X, pk.Y) {
-		return false, errInvalidPub
+		return false, ErrInvalidPub
 	}
 
 	N := new(big.Int).Set(curve.Params().N)
