@@ -57,8 +57,7 @@ func TestECFS(t *testing.T) {
 		err error
 		res bool
 
-		curve elliptic.Curve = elliptic.P256()
-		x     *ecdsa.PrivateKey
+		x, a *ecdsa.PrivateKey
 	)
 
 	// generate secret x
@@ -68,8 +67,11 @@ func TestECFS(t *testing.T) {
 	// generate data
 	data := sha256.Sum256(common.ConcatBytesTight(x.PublicKey.X.Bytes(), x.PublicKey.Y.Bytes()))
 
+	a, err = ecdsa.GenerateKey(curve, rand.Reader)
+	assert.Nil(t, err)
+
 	// generate proof
-	prover, err = NewECFSProver(x.D)
+	prover, err = NewECFSProver(x.D, a.PublicKey.X, a.PublicKey.Y)
 	assert.Nil(t, err)
 
 	// generate proof

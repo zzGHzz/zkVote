@@ -20,8 +20,8 @@ var (
 	ErrNotOnCurve    = errors.New("Not on curve")
 )
 
-// SetECC sets elliptic curve
-func SetECC(c elliptic.Curve) {
+// SetEllipticCurve sets elliptic curve
+func SetEllipticCurve(c elliptic.Curve) {
 	curve = c
 	N = new(big.Int).Set(curve.Params().N)
 	Gx = new(big.Int).Set(curve.Params().Gx)
