@@ -1,8 +1,7 @@
-package ballot
+package vote
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/sha256"
 	"errors"
 	"math/big"
@@ -17,15 +16,9 @@ type BinaryBallot struct {
 	zkp            *zk.BinaryProof
 }
 
-// var
-var (
-	ErrInvalidPubKey = errors.New("Invalid public key")
-)
-
 // NewBinaryBallot generates a binary ballot
 func NewBinaryBallot(value bool, a *ecdsa.PrivateKey, gk *ecdsa.PublicKey) (*BinaryBallot, error) {
 	var (
-		curve  elliptic.Curve
 		yX, yY *big.Int
 
 		prover *zk.BinaryProver
@@ -33,16 +26,12 @@ func NewBinaryBallot(value bool, a *ecdsa.PrivateKey, gk *ecdsa.PublicKey) (*Bin
 		err    error
 	)
 
-	// check curve
-	if a.Curve != gk.Curve {
-		return nil, zk.ErrCurveNotMatch
+	if !isOnCurve(gk.X, gk.Y) || isOnCurve(a.PublicKey.X, a.PublicKey.Y) {
+		return nil, ErrInvalidPubKey
 	}
 
-	curve = a.Curve
-
-	// check gk
-	if !curve.IsOnCurve(gk.X, gk.Y) {
-		return nil, ErrInvalidPubKey
+	if !isInRange(a.D) {
+		return nil, ErrInvalidPrivKey
 	}
 
 	// y = g^{k*a}
@@ -53,8 +42,8 @@ func NewBinaryBallot(value bool, a *ecdsa.PrivateKey, gk *ecdsa.PublicKey) (*Bin
 		yX, yY = curve.Add(yX, yY, curve.Params().Gx, curve.Params().Gy)
 	}
 
-	// Set ECC
-	zk.SetECC(curve)
+	// Set global ECC var for zk package
+	zk.SetEllipticCurve(curve)
 	// Create prover
 	prover, err = zk.NewBinaryProver(value, a.D, a.PublicKey.X, a.PublicKey.Y, gk.X, gk.Y)
 	if err != nil {
@@ -76,6 +65,14 @@ func NewBinaryBallot(value bool, a *ecdsa.PrivateKey, gk *ecdsa.PublicKey) (*Bin
 }
 
 // Verify verifies binary ballot
-func (b *BinaryBallot) Verify() (bool, error) {
-	return b.zkp.Verify()
+func (b *BinaryBallot) Verify() error {
+	res, err := b.zkp.Verify()
+	if err != nil {
+		return err
+	}
+	if !res {
+		return errors.New("Failed to verify")
+	}
+
+	return nil
 }
