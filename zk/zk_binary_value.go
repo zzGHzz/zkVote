@@ -7,6 +7,7 @@ package zk
 import (
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/zzGHzz/zkVote/common"
@@ -223,7 +224,6 @@ func (p *BinaryProof) Verify() (bool, error) {
 		p.a2X.Bytes(), p.a2Y.Bytes(),
 		p.b2X.Bytes(), p.b2Y.Bytes(),
 	))
-	// fmt.Printf("%x\n", c)
 
 	x := new(big.Int).Add(p.d1, p.d2)
 	x = x.Mod(x, N)
@@ -261,10 +261,6 @@ func (p *BinaryProof) Verify() (bool, error) {
 
 	// b2 = g^{k*r2} (y/g)^d2
 	X1, Y1 = curve.ScalarMult(p.gkX, p.gkY, p.r2.Bytes())
-	//X2, Y2 = curve.ScalarMult(p.yX, p.yY, p.d2.Bytes())
-	//X3, Y3 = curve.ScalarBaseMult(new(big.Int).Sub(N, p.d2).Bytes())
-	//X, Y = curve.Add(X1, Y1, X2, Y2)
-	//X, Y = curve.Add(X, Y, X3, Y3)
 	X2, Y2 = curve.Add(p.yX, p.yY, Gx, new(big.Int).Sub(curve.Params().P, Gy))
 	X2, Y2 = curve.ScalarMult(X2, Y2, p.d2.Bytes())
 	X, Y = curve.Add(X1, Y1, X2, Y2)
@@ -273,4 +269,14 @@ func (p *BinaryProof) Verify() (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (p *BinaryProof) String() string {
+	return fmt.Sprintf(`zkBinaryProof:
+	a1	: (%v, %v)
+	b1	: (%v, %v)
+	(r1,d1)	: (%v, %v)
+	a2	: (%v, %v)
+	b2	: (%v, %v)
+	(r2,d2)	: (%v, %v)`, p.a1X, p.a1Y, p.b1X, p.b1Y, p.r1, p.d1, p.a2X, p.a2Y, p.b2X, p.b2Y, p.r1, p.d2)
 }

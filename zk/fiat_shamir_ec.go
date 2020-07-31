@@ -4,7 +4,6 @@ package zk
 
 import (
 	"crypto/sha256"
-	"fmt"
 	"math/big"
 
 	"github.com/zzGHzz/zkVote/common"
@@ -34,7 +33,7 @@ func NewECFSProver(x, hX, hY *big.Int) (*ECFSProver, error) {
 	// y = h^k
 	yX, yY := curve.ScalarMult(hX, hY, x.Bytes())
 
-	fmt.Println(curve.IsOnCurve(yX, yY))
+	// fmt.Println(curve.IsOnCurve(yX, yY))
 
 	return &ECFSProver{
 		new(big.Int).Set(x),
@@ -61,7 +60,7 @@ func (p *ECFSProver) Prove(data []byte) (*ECFSProof, error) {
 		p.yX.Bytes(), p.yY.Bytes(),
 		tX.Bytes(), tY.Bytes(),
 	))
-	fmt.Printf("%x\n", c)
+	// fmt.Printf("%x\n", c)
 
 	// r = v - c*x
 	r := new(big.Int).SetBytes(c[:])
@@ -105,7 +104,6 @@ func (p *ECFSProof) Verify(data []byte) (bool, error) {
 		p.yX.Bytes(), p.yY.Bytes(),
 		p.tX.Bytes(), p.tY.Bytes(),
 	))
-	fmt.Printf("%x\n", c)
 
 	// check t = (g^r)(y^c)
 	X1, Y1 := curve.ScalarMult(p.hX, p.hY, p.r.Bytes())
