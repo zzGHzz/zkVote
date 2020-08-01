@@ -31,6 +31,8 @@ type VoteOptions struct {
 
 	minVoter, maxVoter uint
 	authAddr           []byte
+
+	startTime, endTime uint64
 }
 
 // NewVotingSys news a voting system
@@ -52,21 +54,18 @@ func getVoteID(opt *VoteOptions) [32]byte {
 }
 
 // Register creates a vote
-func (sys *VotingSys) Register(
-	startTime, endTime uint64,
-	opt *VoteOptions,
-) ([32]byte, error) {
+func (sys *VotingSys) Register(opt *VoteOptions) ([32]byte, error) {
 	now := uint64(time.Now().Unix())
-	if now > startTime {
+	if now > opt.startTime {
 		return [32]byte{}, errors.New("Starting time before now")
 	}
-	if endTime <= startTime {
+	if opt.endTime <= opt.startTime {
 		return [32]byte{}, errors.New("Ending time before starting time")
 	}
 
 	id := getVoteID(opt)
-	sys.StartTime[id] = startTime
-	sys.EndTime[id] = endTime
+	sys.StartTime[id] = opt.startTime
+	sys.EndTime[id] = opt.endTime
 
 	switch opt.voteType {
 	case Binary:
