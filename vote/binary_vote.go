@@ -62,10 +62,13 @@ func (v *BinaryVote) newBinaryTally() *BinaryTally {
 }
 
 // Cast casts a ballot
-func (v *BinaryVote) Cast(b *BinaryBallot, addr []byte) error {
-	// address := sha256.Sum256(common.ConcatBytesTight(b.hX.Bytes(), b.hY.Bytes()))
+func (v *BinaryVote) Cast(bt Ballot, addr []byte) error {
+	b, ok := bt.(*BinaryBallot)
+	if !ok {
+		return errors.New("Invalid ballot type")
+	}
 
-	if err := b.Verify(); err != nil {
+	if err := b.VerifyBallot(); err != nil {
 		return err
 	}
 
@@ -122,4 +125,9 @@ func (v *BinaryVote) VerifyTallyRes() error {
 	}
 
 	return nil
+}
+
+// GetAuthPublicKey returns authority public key
+func (v *BinaryVote) GetAuthPublicKey() (*big.Int, *big.Int) {
+	return new(big.Int).Set(v.gkX), new(big.Int).Set(v.gkY)
 }

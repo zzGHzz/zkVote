@@ -18,7 +18,7 @@ func genBinaryBallot(value bool, addr []byte, gkX, gkY *big.Int, t *testing.T) *
 	b, err := NewBinaryBallot(value, a.D, gkX, gkY, addr)
 	assert.Nil(t, err)
 
-	err = b.Verify()
+	err = b.VerifyBallot()
 	assert.Nil(t, err)
 
 	return b

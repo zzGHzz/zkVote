@@ -2,6 +2,7 @@ package vote
 
 import (
 	"crypto/elliptic"
+	"math/big"
 )
 
 // var
@@ -14,14 +15,16 @@ func SetEllipticCurve(c elliptic.Curve) {
 	curve = c
 }
 
-// Vote interface
-type Vote interface {
-	Cast(b Ballot) error
-	Tally() error
-	VerifyTally() error
-}
-
 // Ballot interface
 type Ballot interface {
-	Verify() error
+	VerifyBallot() error
+}
+
+// Vote interface
+type Vote interface {
+	Cast(b Ballot, addr []byte) error
+	Tally(k *big.Int) error
+	VerifyTallyRes() error
+
+	GetAuthPublicKey() (*big.Int, *big.Int)
 }

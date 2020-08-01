@@ -68,8 +68,8 @@ func NewBinaryBallot(value bool, a, gkX, gkY *big.Int, data []byte) (*BinaryBall
 	}, nil
 }
 
-// Verify verifies binary ballot
-func (b *BinaryBallot) Verify() error {
+// VerifyBallot verifies binary ballot
+func (b *BinaryBallot) VerifyBallot() error {
 	if !isOnCurve(b.hX, b.hY) {
 		return errors.New("Invalid h = g^a")
 	}
