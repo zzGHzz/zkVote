@@ -4,6 +4,7 @@ package zk
 
 import (
 	"crypto/sha256"
+	"fmt"
 	"math/big"
 
 	"github.com/zzGHzz/zkVote/common"
@@ -113,4 +114,9 @@ func (p *ECFSProof) Verify(data []byte) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+func (p *ECFSProof) String() string {
+	return fmt.Sprintf("h = (%x, %x); y = (%x, %x); t = (%x, %x); r = %x",
+		p.hX, p.hY, p.yX, p.yY, p.tX, p.tY, p.r)
 }

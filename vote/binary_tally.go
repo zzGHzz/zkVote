@@ -2,6 +2,7 @@ package vote
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/zzGHzz/zkVote/zk"
@@ -121,4 +122,8 @@ func (r *BinaryTallyRes) verify() error {
 	}
 
 	return nil
+}
+
+func (r *BinaryTallyRes) String() (string, string) {
+	return fmt.Sprintf("No. YES = %d", r.V), r.proof.String()
 }

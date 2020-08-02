@@ -272,11 +272,6 @@ func (p *BinaryProof) Verify() (bool, error) {
 }
 
 func (p *BinaryProof) String() string {
-	return fmt.Sprintf(`zkBinaryProof:
-	a1	: (%v, %v)
-	b1	: (%v, %v)
-	(r1,d1)	: (%v, %v)
-	a2	: (%v, %v)
-	b2	: (%v, %v)
-	(r2,d2)	: (%v, %v)`, p.a1X, p.a1Y, p.b1X, p.b1Y, p.r1, p.d1, p.a2X, p.a2Y, p.b2X, p.b2Y, p.r1, p.d2)
+	return fmt.Sprintf("a1 = (%x, %x); b1 = (%x, %x); (r1, d1) = (%x, %x); a2 = (%x, %x); b2 = (%x, %x); (r2, d2) = (%x, %x)",
+		p.a1X, p.a1Y, p.b1X, p.b1Y, p.r1, p.d1, p.a2X, p.a2Y, p.b2X, p.b2Y, p.r1, p.d2)
 }

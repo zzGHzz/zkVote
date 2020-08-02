@@ -131,3 +131,8 @@ func (v *BinaryVote) VerifyTallyRes() error {
 func (v *BinaryVote) GetAuthPublicKey() (*big.Int, *big.Int) {
 	return new(big.Int).Set(v.gkX), new(big.Int).Set(v.gkY)
 }
+
+// GetTallyRes gets the tally result
+func (v *BinaryVote) GetTallyRes() *BinaryTallyRes {
+	return v.res
+}

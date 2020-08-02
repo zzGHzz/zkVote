@@ -1,5 +1,10 @@
 package common
 
+import (
+	"crypto/rand"
+	"errors"
+)
+
 // ConcatBytesTight ...
 func ConcatBytesTight(bs ...[]byte) []byte {
 	var r []byte
@@ -20,4 +25,16 @@ func ConcatBytesTight(bs ...[]byte) []byte {
 	}
 
 	return r
+}
+
+// RandBytes generates rand byte array
+func RandBytes(n uint) ([]byte, error) {
+	if n == 0 {
+		return []byte(nil), errors.New("Zero length")
+	}
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return []byte(nil), err
+	}
+	return b, nil
 }

@@ -13,7 +13,7 @@ import (
 type BinaryBallot struct {
 	hX, hY *big.Int // h = g^a
 	yX, yY *big.Int // y = g^{a*k} * g^v
-	zkp    *zk.BinaryProof
+	proof  *zk.BinaryProof
 }
 
 // NewBinaryBallot generates a binary ballot
@@ -78,7 +78,7 @@ func (b *BinaryBallot) VerifyBallot() error {
 		return errors.New("Invalid y = g^{ak} * g^v")
 	}
 
-	res, err := b.zkp.Verify()
+	res, err := b.proof.Verify()
 	if err != nil {
 		return err
 	}
@@ -89,9 +89,6 @@ func (b *BinaryBallot) VerifyBallot() error {
 	return nil
 }
 
-func (b *BinaryBallot) String() string {
-	return fmt.Sprintf(`BinaryBallot:
-h		= (%v, %v)
-y		= (%v, %v)
-%s`, b.hX, b.hY, b.yX, b.yY, b.zkp.String())
+func (b *BinaryBallot) String() (string, string) {
+	return fmt.Sprintf("h = (%x, %x); y = (%x, %x)", b.hX, b.hY, b.yX, b.yY), b.proof.String()
 }
