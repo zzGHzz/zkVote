@@ -18,6 +18,8 @@ func main() {
 	gkY := new(big.Int).Set(auth.PublicKey.Y)
 	authAddr, _ := common.RandBytes(20)
 
+	fmt.Printf("k = %x, g^k = (%x, %x)\n\n", k, gkX, gkY)
+
 	nVote := uint(5)
 
 	fmt.Printf("Init a vote for %d voters\n\n", nVote)
