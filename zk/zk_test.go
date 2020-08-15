@@ -5,6 +5,8 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/json"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,7 +37,7 @@ func TestBinaryValueZK(t *testing.T) {
 	// Generate and verify zk proof for v = 1
 	prover, err = NewBinaryProver(true, a.D, a.PublicKey.X, a.PublicKey.Y, k.PublicKey.X, k.PublicKey.Y)
 	assert.Nil(t, err)
-	proof, err = prover.Prove(data[:])
+	proof, err = prover.Prove(new(big.Int).SetBytes(data[:]))
 	res, err = proof.Verify()
 	assert.Nil(t, err)
 	assert.True(t, res)
@@ -43,7 +45,7 @@ func TestBinaryValueZK(t *testing.T) {
 	// Generate and verify zk proof for v = 1
 	prover.value = false
 	assert.Nil(t, err)
-	proof, err = prover.Prove(data[:])
+	proof, err = prover.Prove(new(big.Int).SetBytes(data[:]))
 	res, err = proof.Verify()
 	assert.Nil(t, err)
 	assert.True(t, res)
@@ -82,4 +84,33 @@ func TestECFS(t *testing.T) {
 	res, err = proof.Verify(data[:])
 	assert.Nil(t, err)
 	assert.True(t, res)
+}
+
+func TestBinaryProofJSON(t *testing.T) {
+	var (
+		prover *BinaryProver
+		proof  *BinaryProof
+		a, k   *ecdsa.PrivateKey
+		err    error
+		b      []byte
+	)
+	a, _ = ecdsa.GenerateKey(curve, rand.Reader)
+	k, _ = ecdsa.GenerateKey(curve, rand.Reader)
+	data := sha256.Sum256(common.ConcatBytesTight(a.PublicKey.X.Bytes(), a.PublicKey.Y.Bytes()))
+
+	// Generate a random yes vote
+	prover, err = NewBinaryProver(true, a.D, a.PublicKey.X, a.PublicKey.Y, k.PublicKey.X, k.PublicKey.Y)
+	assert.Nil(t, err)
+	proof, err = prover.Prove(new(big.Int).SetBytes(data[:]))
+	assert.Nil(t, err)
+
+	// json marshal
+	b, err = json.Marshal(proof)
+	assert.Nil(t, err)
+
+	// json unmarshal
+	var reconstruct BinaryProof
+	err = json.Unmarshal(b, &reconstruct)
+	assert.Nil(t, err)
+	assert.Equal(t, *proof, reconstruct)
 }

@@ -2,9 +2,12 @@ package vote
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
+
+	"github.com/zzGHzz/zkVote/common"
 
 	"github.com/zzGHzz/zkVote/zk"
 )
@@ -17,6 +20,8 @@ type BinaryBallot struct {
 }
 
 // NewBinaryBallot generates a binary ballot
+//
+// data contains the data (e.g., account address) that identifies the voter.
 func NewBinaryBallot(value bool, a, gkX, gkY *big.Int, data []byte) (*BinaryBallot, error) {
 	var (
 		yX, yY *big.Int
@@ -53,10 +58,8 @@ func NewBinaryBallot(value bool, a, gkX, gkY *big.Int, data []byte) (*BinaryBall
 	}
 
 	// Generate proof
-	// data := sha256.Sum256(common.ConcatBytesTight(
-	// a.PublicKey.X.Bytes(), a.PublicKey.Y.Bytes()))
 	z := sha256.Sum256(data)
-	proof, err = prover.Prove(z[:])
+	proof, err = prover.Prove(new(big.Int).SetBytes(z[:]))
 	if err != nil {
 		return nil, err
 	}
@@ -91,4 +94,63 @@ func (b *BinaryBallot) VerifyBallot() error {
 
 func (b *BinaryBallot) String() (string, string) {
 	return fmt.Sprintf("h = (%x, %x); y = (%x, %x)", b.hX, b.hY, b.yX, b.yY), b.proof.String()
+}
+
+// JSONBinaryBallot JSON
+type JSONBinaryBallot struct {
+	HX    string              `json:"hx"`
+	HY    string              `json:"hy"`
+	YX    string              `json:"yx"`
+	YY    string              `json:"yy"`
+	Proof *zk.JSONBinaryProof `json:"proof"`
+}
+
+// BuildJSONBinaryBallot builds JSON object
+func (b *BinaryBallot) BuildJSONBinaryBallot() *JSONBinaryBallot {
+	return &JSONBinaryBallot{
+		HX:    common.BigIntToHexStr(b.hX),
+		HY:    common.BigIntToHexStr(b.hY),
+		YX:    common.BigIntToHexStr(b.yX),
+		YY:    common.BigIntToHexStr(b.yY),
+		Proof: b.proof.BuildJSONBinaryProof(),
+	}
+}
+
+// MarshalJSON implements json marshal
+func (b *BinaryBallot) MarshalJSON() ([]byte, error) {
+	return json.Marshal(b.BuildJSONBinaryBallot())
+}
+
+// UnmarshalJSON implements json unmarshal
+func (b *BinaryBallot) UnmarshalJSON(data []byte) error {
+	var (
+		obj JSONBinaryBallot
+		err error
+	)
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+
+	if b.hX, err = common.HexStrToBigInt(obj.HX); err != nil {
+		return err
+	}
+	if b.hY, err = common.HexStrToBigInt(obj.HY); err != nil {
+		return err
+	}
+
+	if b.yX, err = common.HexStrToBigInt(obj.YX); err != nil {
+		return err
+	}
+	if b.yY, err = common.HexStrToBigInt(obj.YY); err != nil {
+		return err
+	}
+
+	if b.proof == nil {
+		b.proof = new(zk.BinaryProof)
+	}
+	if err = b.proof.FromJSONBinaryProof(obj.Proof); err != nil {
+		return err
+	}
+
+	return nil
 }

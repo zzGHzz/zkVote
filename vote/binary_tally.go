@@ -15,7 +15,7 @@ type BinaryTally struct {
 	HX, HY         *big.Int // H = prod_i h_i
 	YX, YY         *big.Int // Y = prod_i y_i
 	nVoter         uint     // number of ballots
-	hashedAuthAddr []byte
+	hashedAuthData []byte
 }
 
 // BinaryTallyRes structure
@@ -70,7 +70,7 @@ func (t *BinaryTally) tally(k *big.Int) (*BinaryTallyRes, error) {
 	if err != nil {
 		return nil, err
 	}
-	proof, err := prover.Prove(t.hashedAuthAddr)
+	proof, err := prover.Prove(t.hashedAuthData)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (t *BinaryTally) tally(k *big.Int) (*BinaryTallyRes, error) {
 		new(big.Int).Set(t.HX), new(big.Int).Set(t.HY),
 		XX, XY,
 		new(big.Int).Set(t.YX), new(big.Int).Set(t.YY),
-		append([]byte(nil), t.hashedAuthAddr...),
+		append([]byte(nil), t.hashedAuthData...),
 		proof,
 	}, nil
 }

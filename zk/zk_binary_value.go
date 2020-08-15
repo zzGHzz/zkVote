@@ -6,6 +6,7 @@ package zk
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -23,7 +24,7 @@ type BinaryProver struct {
 
 // BinaryProof - structure
 type BinaryProof struct {
-	data               []byte
+	data               *big.Int
 	gaX, gaY, gkX, gkY *big.Int
 	yX, yY             *big.Int // y = g^{ka}
 	d1, r1             *big.Int
@@ -60,7 +61,7 @@ func NewBinaryProver(value bool, a, gaX, gaY, gkX, gkY *big.Int) (*BinaryProver,
 // Prove generates the zk proof of a binary value
 //
 // data - used to identify the prover, e.g., his/her account address
-func (p *BinaryProver) Prove(data []byte) (*BinaryProof, error) {
+func (p *BinaryProver) Prove(data *big.Int) (*BinaryProof, error) {
 	var w, r1, r2, d1, d2 *big.Int
 	var yX, yY *big.Int
 	var a1X, a1Y, b1X, b1Y, a2X, a2Y, b2X, b2Y *big.Int
@@ -107,7 +108,7 @@ func (p *BinaryProver) Prove(data []byte) (*BinaryProof, error) {
 
 		// c = hash(data, g^a, y, a1, b1, a2, b2)
 		c := sha256.Sum256(common.ConcatBytesTight(
-			data,
+			data.Bytes(),
 			p.gaX.Bytes(), p.gaY.Bytes(),
 			yX.Bytes(), yY.Bytes(),
 			a1X.Bytes(), a1Y.Bytes(),
@@ -158,7 +159,7 @@ func (p *BinaryProver) Prove(data []byte) (*BinaryProof, error) {
 
 		// c = hash(data, g^a, y, a1, b1, a2, b2)
 		c := sha256.Sum256(common.ConcatBytesTight(
-			data,
+			data.Bytes(),
 			p.gaX.Bytes(), p.gaY.Bytes(),
 			yX.Bytes(), yY.Bytes(),
 			a1X.Bytes(), a1Y.Bytes(),
@@ -179,7 +180,7 @@ func (p *BinaryProver) Prove(data []byte) (*BinaryProof, error) {
 	}
 
 	return &BinaryProof{
-		append([]byte(nil), data...),
+		data,
 		new(big.Int).Set(p.gaX), new(big.Int).Set(p.gaY),
 		new(big.Int).Set(p.gkX), new(big.Int).Set(p.gkY),
 		yX, yY,
@@ -216,7 +217,7 @@ func (p *BinaryProof) Verify() (bool, error) {
 
 	// d1 + d2 == c mod N
 	c := sha256.Sum256(common.ConcatBytesTight(
-		p.data,
+		p.data.Bytes(),
 		p.gaX.Bytes(), p.gaY.Bytes(),
 		p.yX.Bytes(), p.yY.Bytes(),
 		p.a1X.Bytes(), p.a1Y.Bytes(),
@@ -274,4 +275,142 @@ func (p *BinaryProof) Verify() (bool, error) {
 func (p *BinaryProof) String() string {
 	return fmt.Sprintf("a1 = (%x, %x); b1 = (%x, %x); (d1, r1) = (%x, %x); a2 = (%x, %x); b2 = (%x, %x); (d2, r2) = (%x, %x)",
 		p.a1X, p.a1Y, p.b1X, p.b1Y, p.d1, p.r1, p.a2X, p.a2Y, p.b2X, p.b2Y, p.d2, p.r2)
+}
+
+// JSONBinaryProof struct
+type JSONBinaryProof struct {
+	Data string `json:"data"`
+	GAX  string `json:"gax"`
+	GAY  string `json:"gay"`
+	GKX  string `json:"gkx"`
+	GKY  string `json:"gky"`
+	YX   string `json:"yx"`
+	YY   string `json:"yy"`
+	D1   string `json:"d1"`
+	D2   string `json:"d2"`
+	R1   string `json:"r1"`
+	R2   string `json:"r2"`
+	A1X  string `json:"a1x"`
+	A1Y  string `json:"a1y"`
+	B1X  string `json:"b1x"`
+	B1Y  string `json:"b1y"`
+	A2X  string `json:"a2x"`
+	A2Y  string `json:"a2y"`
+	B2X  string `json:"b2x"`
+	B2Y  string `json:"b2y"`
+}
+
+// MarshalJSON implements MarshalJSON
+func (p *BinaryProof) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.BuildJSONBinaryProof())
+}
+
+// BuildJSONBinaryProof builds JSON object
+func (p *BinaryProof) BuildJSONBinaryProof() *JSONBinaryProof {
+	return &JSONBinaryProof{
+		Data: common.BigIntToHexStr(p.data),
+		GAX:  common.BigIntToHexStr(p.gaX),
+		GAY:  common.BigIntToHexStr(p.gaY),
+		GKX:  common.BigIntToHexStr(p.gkX),
+		GKY:  common.BigIntToHexStr(p.gkY),
+		YX:   common.BigIntToHexStr(p.yX),
+		YY:   common.BigIntToHexStr(p.yY),
+		A1X:  common.BigIntToHexStr(p.a1X),
+		A1Y:  common.BigIntToHexStr(p.a1Y),
+		B1X:  common.BigIntToHexStr(p.b1X),
+		B1Y:  common.BigIntToHexStr(p.b1Y),
+		A2X:  common.BigIntToHexStr(p.a2X),
+		A2Y:  common.BigIntToHexStr(p.a2Y),
+		B2X:  common.BigIntToHexStr(p.b2X),
+		B2Y:  common.BigIntToHexStr(p.b2Y),
+		R1:   common.BigIntToHexStr(p.r1),
+		R2:   common.BigIntToHexStr(p.r2),
+		D1:   common.BigIntToHexStr(p.d1),
+		D2:   common.BigIntToHexStr(p.d2),
+	}
+}
+
+// UnmarshalJSON implements UnmarshalJSON
+func (p *BinaryProof) UnmarshalJSON(data []byte) error {
+	var jsonproof JSONBinaryProof
+
+	if err := json.Unmarshal(data, &jsonproof); err != nil {
+		return err
+	}
+
+	return p.FromJSONBinaryProof(&jsonproof)
+}
+
+// FromJSONBinaryProof reconstructs from JSONBinaryProof
+func (p *BinaryProof) FromJSONBinaryProof(jsonproof *JSONBinaryProof) error {
+	var err error
+
+	if p.data, err = common.HexStrToBigInt(jsonproof.Data); err != nil {
+		return err
+	}
+
+	if p.gaX, err = common.HexStrToBigInt(jsonproof.GAX); err != nil {
+		return err
+	}
+	if p.gaY, err = common.HexStrToBigInt(jsonproof.GAY); err != nil {
+		return err
+	}
+
+	if p.gkX, err = common.HexStrToBigInt(jsonproof.GKX); err != nil {
+		return err
+	}
+	if p.gkY, err = common.HexStrToBigInt(jsonproof.GKY); err != nil {
+		return err
+	}
+
+	if p.yX, err = common.HexStrToBigInt(jsonproof.YX); err != nil {
+		return err
+	}
+	if p.yY, err = common.HexStrToBigInt(jsonproof.YY); err != nil {
+		return err
+	}
+
+	if p.a1X, err = common.HexStrToBigInt(jsonproof.A1X); err != nil {
+		return err
+	}
+	if p.a1Y, err = common.HexStrToBigInt(jsonproof.A1Y); err != nil {
+		return err
+	}
+
+	if p.b1X, err = common.HexStrToBigInt(jsonproof.B1X); err != nil {
+		return err
+	}
+	if p.b1Y, err = common.HexStrToBigInt(jsonproof.B1Y); err != nil {
+		return err
+	}
+
+	if p.a2X, err = common.HexStrToBigInt(jsonproof.A2X); err != nil {
+		return err
+	}
+	if p.a2Y, err = common.HexStrToBigInt(jsonproof.A2Y); err != nil {
+		return err
+	}
+
+	if p.b2X, err = common.HexStrToBigInt(jsonproof.B2X); err != nil {
+		return err
+	}
+	if p.b2Y, err = common.HexStrToBigInt(jsonproof.B2Y); err != nil {
+		return err
+	}
+
+	if p.r1, err = common.HexStrToBigInt(jsonproof.R1); err != nil {
+		return err
+	}
+	if p.d1, err = common.HexStrToBigInt(jsonproof.D1); err != nil {
+		return err
+	}
+
+	if p.r2, err = common.HexStrToBigInt(jsonproof.R2); err != nil {
+		return err
+	}
+	if p.d2, err = common.HexStrToBigInt(jsonproof.D2); err != nil {
+		return err
+	}
+
+	return nil
 }

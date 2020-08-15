@@ -9,7 +9,7 @@ import (
 // BinaryVote structure
 type BinaryVote struct {
 	gkX, gkY       *big.Int // authority's public key
-	hashedAuthAddr []byte   // address of authorty
+	hashedAuthData []byte   // address of authorty
 
 	minVoter, maxVoter uint // min and max number of votes
 
@@ -22,7 +22,7 @@ type BinaryVote struct {
 }
 
 // NewBinaryVote news a yes-or-no vote
-func NewBinaryVote(minVoter, maxVoter uint, gkX, gkY *big.Int, authAddr []byte) (*BinaryVote, error) {
+func NewBinaryVote(minVoter, maxVoter uint, gkX, gkY *big.Int, authData []byte) (*BinaryVote, error) {
 	if !isOnCurve(gkX, gkY) {
 		return nil, errors.New("Invalid g^k")
 	}
@@ -37,8 +37,8 @@ func NewBinaryVote(minVoter, maxVoter uint, gkX, gkY *big.Int, authAddr []byte) 
 
 	vote.gkX = new(big.Int).Set(gkX)
 	vote.gkY = new(big.Int).Set(gkY)
-	z := sha256.Sum256(authAddr)
-	vote.hashedAuthAddr = z[:]
+	z := sha256.Sum256(authData)
+	vote.hashedAuthData = z[:]
 	vote.ballots = make(map[[32]byte]*BinaryBallot)
 
 	vote.HX = big.NewInt(0)
@@ -57,12 +57,12 @@ func (v *BinaryVote) newBinaryTally() *BinaryTally {
 		new(big.Int).Set(v.YX), new(big.Int).Set(v.YY),
 
 		uint(len(v.ballots)),
-		v.hashedAuthAddr,
+		v.hashedAuthData,
 	}
 }
 
 // Cast casts a ballot
-func (v *BinaryVote) Cast(bt Ballot, addr []byte) error {
+func (v *BinaryVote) Cast(bt Ballot, data []byte) error {
 	b, ok := bt.(*BinaryBallot)
 	if !ok {
 		return errors.New("Invalid ballot type")
@@ -72,8 +72,8 @@ func (v *BinaryVote) Cast(bt Ballot, addr []byte) error {
 		return err
 	}
 
-	z := sha256.Sum256(addr)
-	if old, ok := v.ballots[z]; ok {
+	id := sha256.Sum256(data)
+	if old, ok := v.ballots[id]; ok {
 		iOldhX, iOldhY := new(big.Int).Set(old.hX), new(big.Int).Sub(curve.Params().P, old.hY)
 		v.HX, v.HY = curve.Add(v.HX, v.HY, iOldhX, iOldhY)
 
@@ -88,7 +88,7 @@ func (v *BinaryVote) Cast(bt Ballot, addr []byte) error {
 	v.HX, v.HY = curve.Add(v.HX, v.HY, b.hX, b.hY)
 	v.YX, v.YY = curve.Add(v.YX, v.YY, b.yX, b.yY)
 
-	v.ballots[sha256.Sum256(addr)] = b
+	v.ballots[id] = b
 
 	return nil
 }
