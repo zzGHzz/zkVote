@@ -77,11 +77,11 @@ func TestECFS(t *testing.T) {
 	assert.Nil(t, err)
 
 	// generate proof
-	proof, err = prover.Prove(data[:])
+	proof, err = prover.Prove(new(big.Int).SetBytes(data[:]))
 	assert.Nil(t, err)
 
 	// verification
-	res, err = proof.Verify(data[:])
+	res, err = proof.Verify()
 	assert.Nil(t, err)
 	assert.True(t, res)
 }
@@ -110,6 +110,44 @@ func TestBinaryProofJSON(t *testing.T) {
 
 	// json unmarshal
 	var reconstruct BinaryProof
+	err = json.Unmarshal(b, &reconstruct)
+	assert.Nil(t, err)
+	assert.Equal(t, *proof, reconstruct)
+}
+
+func TestECFSProofJSON(t *testing.T) {
+	var (
+		prover *ECFSProver
+		proof  *ECFSProof
+		err    error
+		x, a   *ecdsa.PrivateKey
+		b      []byte
+	)
+
+	// generate secret x
+	x, err = ecdsa.GenerateKey(curve, rand.Reader)
+	assert.Nil(t, err)
+
+	// generate data
+	data := sha256.Sum256(common.ConcatBytesTight(x.PublicKey.X.Bytes(), x.PublicKey.Y.Bytes()))
+
+	a, err = ecdsa.GenerateKey(curve, rand.Reader)
+	assert.Nil(t, err)
+
+	// generate proof
+	prover, err = NewECFSProver(x.D, a.PublicKey.X, a.PublicKey.Y)
+	assert.Nil(t, err)
+
+	// generate proof
+	proof, err = prover.Prove(new(big.Int).SetBytes(data[:]))
+	assert.Nil(t, err)
+
+	// json marshal
+	b, err = json.Marshal(proof)
+	assert.Nil(t, err)
+
+	// json unmarshal
+	var reconstruct ECFSProof
 	err = json.Unmarshal(b, &reconstruct)
 	assert.Nil(t, err)
 	assert.Equal(t, *proof, reconstruct)
