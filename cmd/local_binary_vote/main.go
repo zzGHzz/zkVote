@@ -22,6 +22,21 @@ func main() {
 
 	fmt.Printf("k = %x, g^k = (%x, %x)\n\n", k, gkX, gkY)
 
+	if data, err := json.Marshal(struct {
+		GKX string `json:"gkx"`
+		GKY string `json:"gky"`
+	}{
+		common.BigIntToHexStr(gkX),
+		common.BigIntToHexStr(gkY),
+	}); err != nil {
+		panic(err)
+	} else {
+		file := "./auth_public_key.json"
+		if err := ioutil.WriteFile(file, data, 0664); err != nil {
+			panic(err)
+		}
+	}
+
 	nVote := uint(5)
 
 	fmt.Printf("Init a vote for %d voters\n\n", nVote)
@@ -51,7 +66,7 @@ func main() {
 		if data, err := json.Marshal(b); err != nil {
 			panic(err)
 		} else {
-			file := fmt.Sprintf("./vote_%d.txt", i)
+			file := fmt.Sprintf("./vote_%d.json", i)
 			if err := ioutil.WriteFile(file, data, 0664); err != nil {
 				panic(err)
 			}
@@ -83,7 +98,7 @@ func main() {
 	if data, err := json.Marshal(res); err != nil {
 		panic(err)
 	} else {
-		if err := ioutil.WriteFile("./tally.txt", data, 0664); err != nil {
+		if err := ioutil.WriteFile("./tally.json", data, 0664); err != nil {
 			panic(err)
 		}
 	}

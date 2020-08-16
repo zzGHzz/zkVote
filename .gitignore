@@ -1,2 +1,4 @@
 cmd/tmp
-cmd/local_binary_vote/*.txt
+cmd/local_binary_vote/*.json
+
+.DS_Store
