@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/json"
 	"testing"
 
 	"math/big"
@@ -110,4 +111,50 @@ func TestBinaryVoteTally(t *testing.T) {
 	assert.Equal(t, binaryVote.res.V, V)
 	err = binaryVote.VerifyTallyRes()
 	assert.Nil(t, err)
+}
+
+func TestBinaryBallotJSON(t *testing.T) {
+	a, _ := ecdsa.GenerateKey(curve, rand.Reader)
+	k, _ := ecdsa.GenerateKey(curve, rand.Reader)
+	data := append(a.PublicKey.X.Bytes(), a.PublicKey.Y.Bytes()...)
+	ballot, err := NewBinaryBallot(true, a.D, k.PublicKey.X, k.PublicKey.Y, data)
+	assert.Nil(t, err)
+
+	b, err := json.Marshal(ballot)
+	assert.Nil(t, err)
+
+	var reconstruct BinaryBallot
+	err = json.Unmarshal(b, &reconstruct)
+	assert.Nil(t, err)
+	assert.Equal(t, *ballot, reconstruct)
+}
+
+func TestBinaryTallyResJSON(t *testing.T) {
+	var (
+		b   []byte
+		err error
+	)
+
+	nVoter := uint(20)
+	k, _ := ecdsa.GenerateKey(curve, rand.Reader)
+	authAddr := make([]byte, 20)
+	rand.Read(authAddr)
+
+	binaryVote, err := NewBinaryVote(nVoter, nVoter, k.PublicKey.X, k.PublicKey.Y, authAddr)
+	assert.Nil(t, err)
+
+	castRandBallots(binaryVote, t)
+	err = binaryVote.Tally(k.D)
+	assert.Nil(t, err)
+
+	// json marshal
+	res := binaryVote.GetTallyRes()
+	b, err = json.Marshal(res)
+	assert.Nil(t, err)
+
+	// json unmarshal
+	var reconstruct BinaryTallyRes
+	err = json.Unmarshal(b, &reconstruct)
+	assert.Nil(t, err)
+	assert.Equal(t, *res, reconstruct)
 }

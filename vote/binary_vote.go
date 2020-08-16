@@ -56,7 +56,7 @@ func (v *BinaryVote) newBinaryTally() *BinaryTally {
 		new(big.Int).Set(v.HX), new(big.Int).Set(v.HY),
 		new(big.Int).Set(v.YX), new(big.Int).Set(v.YY),
 
-		uint(len(v.ballots)),
+		uint64(len(v.ballots)),
 		v.hashedAuthData,
 	}
 }

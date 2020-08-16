@@ -20,10 +20,11 @@ type ECFSProver struct {
 
 // ECFSProof - proof structure
 type ECFSProof struct {
-	data      *big.Int
-	hX, hY    *big.Int
-	yX, yY    *big.Int
-	tX, tY, r *big.Int
+	data   *big.Int
+	hX, hY *big.Int
+	yX, yY *big.Int
+	tX, tY *big.Int
+	r      *big.Int
 }
 
 // NewECFSProver news a prover

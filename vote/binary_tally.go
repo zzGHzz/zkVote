@@ -1,9 +1,12 @@
 package vote
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
+
+	"github.com/zzGHzz/zkVote/common"
 
 	"github.com/zzGHzz/zkVote/zk"
 )
@@ -14,21 +17,21 @@ type BinaryTally struct {
 
 	HX, HY         *big.Int // H = prod_i h_i
 	YX, YY         *big.Int // Y = prod_i y_i
-	nVoter         uint     // number of ballots
+	nVoter         uint64   // number of ballots
 	hashedAuthData []byte
 }
 
 // BinaryTallyRes structure
 type BinaryTallyRes struct {
-	gkX, gkY *big.Int
+	// gkX, gkY *big.Int
 
-	V      uint     // V = sum_i v_i
-	HX, HY *big.Int // h = prod_i g^a_i
+	V uint64 // V = sum_i v_i
+	// HX, HY *big.Int // h = prod_i g^a_i
 	XX, XY *big.Int // X = h^k
 	YX, YY *big.Int // Y = X * g^v
 
-	hashedAuthAddr []byte
-	proof          *zk.ECFSProof // zkp proves the correctness of h^k
+	// hashedAuthAddr []byte
+	proof *zk.ECFSProof // zkp proves the correctness of h^k
 }
 
 // Tally computes result and zk proof
@@ -53,7 +56,7 @@ func (t *BinaryTally) tally(k *big.Int) (*BinaryTallyRes, error) {
 
 	// power break v
 	X, Y := big.NewInt(0), big.NewInt(0)
-	V := uint(0)
+	V := uint64(0)
 	for {
 		V = V + 1
 		X, Y = curve.Add(X, Y, curve.Params().Gx, curve.Params().Gy)
@@ -70,31 +73,31 @@ func (t *BinaryTally) tally(k *big.Int) (*BinaryTallyRes, error) {
 	if err != nil {
 		return nil, err
 	}
-	proof, err := prover.Prove(t.hashedAuthData)
+	proof, err := prover.Prove(new(big.Int).SetBytes(t.hashedAuthData))
 	if err != nil {
 		return nil, err
 	}
 
 	return &BinaryTallyRes{
-		new(big.Int).Set(t.gkX), new(big.Int).Set(t.gkY),
+		// new(big.Int).Set(t.gkX), new(big.Int).Set(t.gkY),
 		V,
-		new(big.Int).Set(t.HX), new(big.Int).Set(t.HY),
+		// new(big.Int).Set(t.HX), new(big.Int).Set(t.HY),
 		XX, XY,
 		new(big.Int).Set(t.YX), new(big.Int).Set(t.YY),
-		append([]byte(nil), t.hashedAuthData...),
+		// append([]byte(nil), t.hashedAuthData...),
 		proof,
 	}, nil
 }
 
 // Verify verifies tally result
 func (r *BinaryTallyRes) verify() error {
-	if !isOnCurve(r.gkX, r.gkY) {
-		return errors.New("Invalid g^k")
-	}
+	// if !isOnCurve(r.gkX, r.gkY) {
+	// 	return errors.New("Invalid g^k")
+	// }
 
-	if !isOnCurve(r.HX, r.HY) {
-		return errors.New("Invalid h = prod_i g^a_i")
-	}
+	// if !isOnCurve(r.HX, r.HY) {
+	// 	return errors.New("Invalid h = prod_i g^a_i")
+	// }
 
 	if !isOnCurve(r.XX, r.XY) {
 		return errors.New("Invalid X = h^k")
@@ -113,7 +116,7 @@ func (r *BinaryTallyRes) verify() error {
 	}
 
 	// Verify zkp
-	res, err := r.proof.Verify(r.hashedAuthAddr)
+	res, err := r.proof.Verify()
 	if err != nil {
 		return err
 	}
@@ -126,4 +129,78 @@ func (r *BinaryTallyRes) verify() error {
 
 func (r *BinaryTallyRes) String() (string, string) {
 	return fmt.Sprintf("No. YES = %d", r.V), r.proof.String()
+}
+
+// JSONBinaryTallyRes defines json object
+type JSONBinaryTallyRes struct {
+	V     uint64            `json:"v"`
+	XX    string            `json:"xx"`
+	XY    string            `json:"xy"`
+	YX    string            `json:"yx"`
+	YY    string            `json:"yy"`
+	Proof *zk.JSONECFSProof `json:"proof"`
+}
+
+// BuildJSONBinaryTallyRes builds json object
+func (r *BinaryTallyRes) BuildJSONBinaryTallyRes() *JSONBinaryTallyRes {
+	return &JSONBinaryTallyRes{
+		V:     r.V,
+		XX:    common.BigIntToHexStr(r.XX),
+		XY:    common.BigIntToHexStr(r.XY),
+		YX:    common.BigIntToHexStr(r.YX),
+		YY:    common.BigIntToHexStr(r.YY),
+		Proof: r.proof.BuildJSONJSONECFSProof(),
+	}
+}
+
+// MarshalJSON implements json marshal
+func (r *BinaryTallyRes) MarshalJSON() ([]byte, error) {
+	return json.Marshal(r.BuildJSONBinaryTallyRes())
+}
+
+// FromJSONBinaryTallyRes reconstructs from json object
+func (r *BinaryTallyRes) FromJSONBinaryTallyRes(obj *JSONBinaryTallyRes) error {
+	var err error
+
+	r.V = obj.V
+
+	// if r.HX, err = common.HexStrToBigInt(obj.Proof.HX); err != nil {
+	// 	return err
+	// }
+	// if r.HY, err = common.HexStrToBigInt(obj.Proof.HY); err != nil {
+	// 	return err
+	// }
+
+	if r.XX, err = common.HexStrToBigInt(obj.XX); err != nil {
+		return err
+	}
+	if r.XY, err = common.HexStrToBigInt(obj.XY); err != nil {
+		return err
+	}
+
+	if r.YX, err = common.HexStrToBigInt(obj.YX); err != nil {
+		return err
+	}
+	if r.YY, err = common.HexStrToBigInt(obj.YY); err != nil {
+		return err
+	}
+
+	if r.proof == nil {
+		r.proof = new(zk.ECFSProof)
+	}
+	if err := r.proof.FromJSONECFSProof(obj.Proof); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UnmarshalJSON implements json unmarshal
+func (r *BinaryTallyRes) UnmarshalJSON(data []byte) error {
+	var obj JSONBinaryTallyRes
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+
+	return r.FromJSONBinaryTallyRes(&obj)
 }

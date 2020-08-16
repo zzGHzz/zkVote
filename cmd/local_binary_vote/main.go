@@ -4,7 +4,9 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 
 	"github.com/zzGHzz/zkVote/common"
@@ -46,6 +48,15 @@ func main() {
 		}
 		fmt.Printf("\nBallot [%d]:\nVALUE: %v\nCONTENT: %s\nZKPROOF: %s\n", i+1, valStr, ballotStr, zkpStr)
 
+		if data, err := json.Marshal(b); err != nil {
+			panic(err)
+		} else {
+			file := fmt.Sprintf("./vote_%d.txt", i)
+			if err := ioutil.WriteFile(file, data, 0664); err != nil {
+				panic(err)
+			}
+		}
+
 		if err := b.VerifyBallot(); err != nil {
 			panic("zkp verification failed")
 		}
@@ -69,13 +80,21 @@ func main() {
 	resStr, zkpStr := res.String()
 	fmt.Printf("\n%s\nZKPROOF: %s\n", resStr, zkpStr)
 
+	if data, err := json.Marshal(res); err != nil {
+		panic(err)
+	} else {
+		if err := ioutil.WriteFile("./tally.txt", data, 0664); err != nil {
+			panic(err)
+		}
+	}
+
 	if err := v.VerifyTallyRes(); err != nil {
 		panic(err)
 	}
 
 	fmt.Printf("\nZKProof verification: PASS\n")
 
-	if res.V != uint(nYes) {
+	if res.V != uint64(nYes) {
 		panic("Invalid number of Yes votes")
 	}
 
