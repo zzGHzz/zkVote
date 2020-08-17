@@ -1,7 +1,6 @@
 package vote
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -58,8 +57,8 @@ func NewBinaryBallot(value bool, a, gkX, gkY *big.Int, data []byte) (*BinaryBall
 	}
 
 	// Generate proof
-	z := sha256.Sum256(data)
-	proof, err = prover.Prove(new(big.Int).SetBytes(z[:]))
+	// z := sha256.Sum256(data)
+	proof, err = prover.Prove(new(big.Int).SetBytes(data))
 	if err != nil {
 		return nil, err
 	}

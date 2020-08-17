@@ -108,7 +108,7 @@ func TestBinaryVoteTally(t *testing.T) {
 	// Tally
 	err = binaryVote.Tally(k.D)
 	assert.Nil(t, err)
-	assert.Equal(t, binaryVote.res.V, V)
+	assert.Equal(t, binaryVote.res.V, uint64(V))
 	err = binaryVote.VerifyTallyRes()
 	assert.Nil(t, err)
 }

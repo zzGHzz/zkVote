@@ -32,7 +32,7 @@ func TestBinaryValueZK(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Generate data (e.g., voter's account address)
-	data := sha256.Sum256(common.ConcatBytesTight(a.PublicKey.X.Bytes(), a.PublicKey.Y.Bytes()))
+	data := sha256.Sum256(common.ConcatBytes(a.PublicKey.X.Bytes(), a.PublicKey.Y.Bytes()))
 
 	// Generate and verify zk proof for v = 1
 	prover, err = NewBinaryProver(true, a.D, a.PublicKey.X, a.PublicKey.Y, k.PublicKey.X, k.PublicKey.Y)
@@ -67,7 +67,7 @@ func TestECFS(t *testing.T) {
 	assert.Nil(t, err)
 
 	// generate data
-	data := sha256.Sum256(common.ConcatBytesTight(x.PublicKey.X.Bytes(), x.PublicKey.Y.Bytes()))
+	data := sha256.Sum256(common.ConcatBytes(x.PublicKey.X.Bytes(), x.PublicKey.Y.Bytes()))
 
 	a, err = ecdsa.GenerateKey(curve, rand.Reader)
 	assert.Nil(t, err)
@@ -96,7 +96,7 @@ func TestBinaryProofJSON(t *testing.T) {
 	)
 	a, _ = ecdsa.GenerateKey(curve, rand.Reader)
 	k, _ = ecdsa.GenerateKey(curve, rand.Reader)
-	data := sha256.Sum256(common.ConcatBytesTight(a.PublicKey.X.Bytes(), a.PublicKey.Y.Bytes()))
+	data := sha256.Sum256(common.ConcatBytes(a.PublicKey.X.Bytes(), a.PublicKey.Y.Bytes()))
 
 	// Generate a random yes vote
 	prover, err = NewBinaryProver(true, a.D, a.PublicKey.X, a.PublicKey.Y, k.PublicKey.X, k.PublicKey.Y)
@@ -129,7 +129,7 @@ func TestECFSProofJSON(t *testing.T) {
 	assert.Nil(t, err)
 
 	// generate data
-	data := sha256.Sum256(common.ConcatBytesTight(x.PublicKey.X.Bytes(), x.PublicKey.Y.Bytes()))
+	data := sha256.Sum256(common.ConcatBytes(x.PublicKey.X.Bytes(), x.PublicKey.Y.Bytes()))
 
 	a, err = ecdsa.GenerateKey(curve, rand.Reader)
 	assert.Nil(t, err)

@@ -107,7 +107,7 @@ func (p *BinaryProver) Prove(data *big.Int) (*BinaryProof, error) {
 		b2X, b2Y = curve.Add(b2X, b2Y, X3, Y3)
 
 		// c = hash(data, g^a, y, a1, b1, a2, b2)
-		c := sha256.Sum256(common.ConcatBytesTight(
+		c := sha256.Sum256(common.ConcatBytes(
 			data.Bytes(),
 			p.gaX.Bytes(), p.gaY.Bytes(),
 			yX.Bytes(), yY.Bytes(),
@@ -158,7 +158,7 @@ func (p *BinaryProver) Prove(data *big.Int) (*BinaryProof, error) {
 		b1X, b1Y = curve.Add(X1, Y1, X2, Y2)
 
 		// c = hash(data, g^a, y, a1, b1, a2, b2)
-		c := sha256.Sum256(common.ConcatBytesTight(
+		c := sha256.Sum256(common.ConcatBytes(
 			data.Bytes(),
 			p.gaX.Bytes(), p.gaY.Bytes(),
 			yX.Bytes(), yY.Bytes(),
@@ -216,7 +216,7 @@ func (p *BinaryProof) Verify() (bool, error) {
 	}
 
 	// d1 + d2 == c mod N
-	c := sha256.Sum256(common.ConcatBytesTight(
+	c := sha256.Sum256(common.ConcatBytes(
 		p.data.Bytes(),
 		p.gaX.Bytes(), p.gaY.Bytes(),
 		p.yX.Bytes(), p.yY.Bytes(),

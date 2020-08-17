@@ -58,7 +58,7 @@ func (p *ECFSProver) Prove(data *big.Int) (*ECFSProof, error) {
 	tX, tY := curve.ScalarMult(p.hX, p.hY, v.Bytes())
 
 	// c = H(data, g, y, t)
-	c := sha256.Sum256(common.ConcatBytesTight(
+	c := sha256.Sum256(common.ConcatBytes(
 		data.Bytes(),
 		p.hX.Bytes(), p.hY.Bytes(),
 		p.yX.Bytes(), p.yY.Bytes(),
@@ -103,7 +103,7 @@ func (p *ECFSProof) Verify() (bool, error) {
 	}
 
 	// c = hash(data, g, y, t)
-	c := sha256.Sum256(common.ConcatBytesTight(
+	c := sha256.Sum256(common.ConcatBytes(
 		p.data.Bytes(),
 		p.hX.Bytes(), p.hY.Bytes(),
 		p.yX.Bytes(), p.yY.Bytes(),
