@@ -51,14 +51,14 @@ func main() {
 				Action: batchVerifyBinaryBallots,
 			},
 			{
-				Name:  "gen-bin",
-				Usage: "Generate ballot",
+				Name:  "bat-gen-bin",
+				Usage: "Batch generate binary ballots",
 				Flags: []cli.Flag{
 					inFileFlag,
 					outDirFlag,
 					fileFlag,
 				},
-				Action: genBinaryBallot,
+				Action: genBinaryBallots,
 			},
 			{
 				Name:  "gen-rand-bin",
@@ -89,13 +89,13 @@ func main() {
 	}
 }
 
-func genBinaryBallot(ctx *cli.Context) error {
+func genBinaryBallots(ctx *cli.Context) error {
 	var (
 		a, gkX, gkY, addr *big.Int
 		err               error
 
-		data []byte
-		b    *vote.BinaryBallot
+		data    []byte
+		ballots []*vote.BinaryBallot
 	)
 
 	data, err = ioutil.ReadFile(ctx.String(inFileFlag.Name))
@@ -108,47 +108,45 @@ func genBinaryBallot(ctx *cli.Context) error {
 		return fmt.Errorf("Output dir [%s] does not exist", outDir)
 	}
 
-	type LoadInfo struct {
-		GKX  string `json:"gkx"`
-		GKY  string `json:"gky"`
-		A    string `json:"a"`
-		Addr string `json:"address"`
-		V    uint   `json:"v"`
-	}
-
-	var info LoadInfo
-	if err := json.Unmarshal(data, &info); err != nil {
+	var input DataForGenBinaryBallots
+	if err := json.Unmarshal(data, &input); err != nil {
 		return err
 	}
 
-	// Convert string to big.Int
-	if a, err = common.HexStrToBigInt(info.A); err != nil {
+	// Convert g^k from string
+	if gkX, err = common.HexStrToBigInt(input.GKX); err != nil {
 		return err
 	}
-	if gkX, err = common.HexStrToBigInt(info.GKX); err != nil {
-		return err
-	}
-	if gkY, err = common.HexStrToBigInt(info.GKY); err != nil {
-		return err
-	}
-	if addr, err = common.HexStrToBigInt(info.Addr); err != nil {
+	if gkY, err = common.HexStrToBigInt(input.GKY); err != nil {
 		return err
 	}
 
-	// Generate binary ballot
-	b, err = vote.NewBinaryBallot(info.V != 0, a, gkX, gkY, addr)
-	if err != nil {
-		return err
+	for _, d := range input.Data {
+		// Convert string to big.Int
+		if a, err = common.HexStrToBigInt(d.A); err != nil {
+			return err
+		}
+		if addr, err = common.HexStrToBigInt(d.Address); err != nil {
+			return err
+		}
+
+		// Generate binary ballot
+		b, err := vote.NewBinaryBallot(d.V != 0, a, gkX, gkY, addr)
+		if err != nil {
+			return err
+		}
+
+		ballots = append(ballots, b)
 	}
 
 	// Write into file
-	data, err = json.Marshal(b)
+	data, err = json.Marshal(ballots)
 	if err != nil {
 		return err
 	}
 	file := ctx.String(fileFlag.Name)
 	if file == "" {
-		file = "ballot.json"
+		file = "ballots.json"
 	}
 	err = ioutil.WriteFile(filepath.Join(outDir, file), data, 0700)
 	if err != nil {
