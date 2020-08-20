@@ -102,7 +102,7 @@ func (p *ECFSProof) Verify() (bool, error) {
 		return false, ErrOutOfRange
 	}
 
-	// c = hash(data, g, y, t)
+	// c = hash(data, h, y, t)
 	c := sha256.Sum256(common.ConcatBytes(
 		p.data.Bytes(),
 		p.hX.Bytes(), p.hY.Bytes(),

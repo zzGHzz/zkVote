@@ -72,7 +72,7 @@ func main() {
 	nVote := uint(5)
 
 	fmt.Printf("Init a vote for %d voters\n\n", nVote)
-	v, _ := vote.NewBinaryVote(nVote, nVote, gkX, gkY, authAddr.Bytes())
+	v, _ := vote.NewBinaryVote(nVote, nVote, gkX, gkY, authAddr)
 
 	printline()
 	fmt.Println()
@@ -99,7 +99,7 @@ func main() {
 			panic(fmt.Sprintf("Invalid accounts[%d]", i+1))
 		}
 
-		b, _ := vote.NewBinaryBallot(values[i], a, gkX, gkY, voterAddr.Bytes())
+		b, _ := vote.NewBinaryBallot(values[i], a, gkX, gkY, voterAddr)
 
 		ballotStr, zkpStr := b.String()
 		valStr := "YES"
@@ -123,7 +123,7 @@ func main() {
 
 		fmt.Printf("\nZKProof verification: PASS\n")
 
-		v.Cast(b, voterAddr.Bytes())
+		v.Cast(b, voterAddr)
 
 		fmt.Println()
 	}

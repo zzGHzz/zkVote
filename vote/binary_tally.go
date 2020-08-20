@@ -15,10 +15,10 @@ import (
 type BinaryTally struct {
 	gkX, gkY *big.Int
 
-	HX, HY         *big.Int // H = prod_i h_i
-	YX, YY         *big.Int // Y = prod_i y_i
-	nVoter         uint64   // number of ballots
-	hashedAuthData []byte
+	HX, HY   *big.Int // H = prod_i h_i = prod_i g^a_i
+	YX, YY   *big.Int // Y = prod_i y_i = prod_i g^{a_i*k + v_i}
+	nVoter   uint64   // number of ballots
+	authData *big.Int
 }
 
 // BinaryTallyRes structure
@@ -73,7 +73,7 @@ func (t *BinaryTally) tally(k *big.Int) (*BinaryTallyRes, error) {
 	if err != nil {
 		return nil, err
 	}
-	proof, err := prover.Prove(new(big.Int).SetBytes(t.hashedAuthData))
+	proof, err := prover.Prove(t.authData)
 	if err != nil {
 		return nil, err
 	}

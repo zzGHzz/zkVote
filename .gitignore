@@ -1,4 +1,7 @@
 cmd/tmp
 cmd/local_binary_vote/*.json
+cmd/zkvote/zkvote
+cmd/zkvote/*.json
 
 .DS_Store
+.vscode

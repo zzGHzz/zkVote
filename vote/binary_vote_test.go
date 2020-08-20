@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func genBinaryBallot(value bool, addr []byte, gkX, gkY *big.Int, t *testing.T) *BinaryBallot {
+func genBinaryBallot(value bool, addr *big.Int, gkX, gkY *big.Int, t *testing.T) *BinaryBallot {
 	a, _ := ecdsa.GenerateKey(curve, rand.Reader)
 
 	b, err := NewBinaryBallot(value, a.D, gkX, gkY, addr)
@@ -33,20 +33,20 @@ func getRandAddr() []byte {
 
 func TestBinaryVoteCast(t *testing.T) {
 	k, _ := ecdsa.GenerateKey(curve, rand.Reader)
-	authAddr := getRandAddr()
+	authAddr := new(big.Int).SetBytes(getRandAddr())
 
 	nVoter := uint(20)
 
 	binaryVote, err := NewBinaryVote(nVoter, nVoter, k.PublicKey.X, k.PublicKey.Y, authAddr)
 	assert.Nil(t, err)
 
-	voterAddr := getRandAddr()
+	voterAddr := new(big.Int).SetBytes(getRandAddr())
 
 	// Cast the first ballot
 	ballot1 := genBinaryBallot(true, voterAddr, k.PublicKey.X, k.PublicKey.Y, t)
 	err = binaryVote.Cast(ballot1, voterAddr)
 	assert.Nil(t, err)
-	savedBallot, ok := binaryVote.ballots[sha256.Sum256(voterAddr)]
+	savedBallot, ok := binaryVote.ballots[sha256.Sum256(voterAddr.Bytes())]
 	assert.True(t, ok)
 	assert.Equal(t, savedBallot, ballot1)
 	assert.Equal(t, binaryVote.HX, ballot1.hX)
@@ -56,7 +56,7 @@ func TestBinaryVoteCast(t *testing.T) {
 	ballot2 := genBinaryBallot(false, voterAddr, k.PublicKey.X, k.PublicKey.Y, t)
 	err = binaryVote.Cast(ballot2, voterAddr)
 	assert.Nil(t, err)
-	savedBallot, ok = binaryVote.ballots[sha256.Sum256(voterAddr)]
+	savedBallot, ok = binaryVote.ballots[sha256.Sum256(voterAddr.Bytes())]
 	assert.True(t, ok)
 	assert.Equal(t, savedBallot, ballot2)
 	assert.Equal(t, binaryVote.HX, ballot2.hX)
@@ -76,9 +76,9 @@ func castRandBallots(binaryVote *BinaryVote, t *testing.T) uint {
 			value = false
 		}
 
-		b := genBinaryBallot(value, getRandAddr(), binaryVote.gkX, binaryVote.gkY, t)
+		b := genBinaryBallot(value, new(big.Int).SetBytes(getRandAddr()), binaryVote.gkX, binaryVote.gkY, t)
 
-		err := binaryVote.Cast(b, getRandAddr())
+		err := binaryVote.Cast(b, new(big.Int).SetBytes(getRandAddr()))
 		assert.Nil(t, err)
 
 		if i = i + 1; i >= binaryVote.maxVoter {
@@ -99,7 +99,7 @@ func TestBinaryVoteTally(t *testing.T) {
 	addr := make([]byte, 20)
 	rand.Read(addr)
 
-	binaryVote, err := NewBinaryVote(nVoter, nVoter, k.PublicKey.X, k.PublicKey.Y, addr)
+	binaryVote, err := NewBinaryVote(nVoter, nVoter, k.PublicKey.X, k.PublicKey.Y, new(big.Int).SetBytes(addr))
 	assert.Nil(t, err)
 
 	// Cast ballots
@@ -117,7 +117,7 @@ func TestBinaryBallotJSON(t *testing.T) {
 	a, _ := ecdsa.GenerateKey(curve, rand.Reader)
 	k, _ := ecdsa.GenerateKey(curve, rand.Reader)
 	data := append(a.PublicKey.X.Bytes(), a.PublicKey.Y.Bytes()...)
-	ballot, err := NewBinaryBallot(true, a.D, k.PublicKey.X, k.PublicKey.Y, data)
+	ballot, err := NewBinaryBallot(true, a.D, k.PublicKey.X, k.PublicKey.Y, new(big.Int).SetBytes(data))
 	assert.Nil(t, err)
 
 	b, err := json.Marshal(ballot)
@@ -140,7 +140,7 @@ func TestBinaryTallyResJSON(t *testing.T) {
 	authAddr := make([]byte, 20)
 	rand.Read(authAddr)
 
-	binaryVote, err := NewBinaryVote(nVoter, nVoter, k.PublicKey.X, k.PublicKey.Y, authAddr)
+	binaryVote, err := NewBinaryVote(nVoter, nVoter, k.PublicKey.X, k.PublicKey.Y, new(big.Int).SetBytes(authAddr))
 	assert.Nil(t, err)
 
 	castRandBallots(binaryVote, t)

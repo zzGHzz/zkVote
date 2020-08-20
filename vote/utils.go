@@ -1,6 +1,8 @@
 package vote
 
-import "math/big"
+import (
+	"math/big"
+)
 
 func isOnCurve(X, Y *big.Int) bool {
 	return curve.IsOnCurve(X, Y)

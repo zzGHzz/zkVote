@@ -21,7 +21,7 @@ type BinaryBallot struct {
 // NewBinaryBallot generates a binary ballot
 //
 // data contains the data (e.g., account address) that identifies the voter.
-func NewBinaryBallot(value bool, a, gkX, gkY *big.Int, data []byte) (*BinaryBallot, error) {
+func NewBinaryBallot(value bool, a, gkX, gkY *big.Int, data *big.Int) (*BinaryBallot, error) {
 	var (
 		yX, yY *big.Int
 
@@ -57,8 +57,7 @@ func NewBinaryBallot(value bool, a, gkX, gkY *big.Int, data []byte) (*BinaryBall
 	}
 
 	// Generate proof
-	// z := sha256.Sum256(data)
-	proof, err = prover.Prove(new(big.Int).SetBytes(data))
+	proof, err = prover.Prove(data)
 	if err != nil {
 		return nil, err
 	}
@@ -120,15 +119,9 @@ func (b *BinaryBallot) MarshalJSON() ([]byte, error) {
 	return json.Marshal(b.BuildJSONBinaryBallot())
 }
 
-// UnmarshalJSON implements json unmarshal
-func (b *BinaryBallot) UnmarshalJSON(data []byte) error {
-	var (
-		obj JSONBinaryBallot
-		err error
-	)
-	if err := json.Unmarshal(data, &obj); err != nil {
-		return err
-	}
+// FromJSONBinaryBallot reconstructs from json object
+func (b *BinaryBallot) FromJSONBinaryBallot(obj *JSONBinaryBallot) error {
+	var err error
 
 	if b.hX, err = common.HexStrToBigInt(obj.HX); err != nil {
 		return err
@@ -152,4 +145,14 @@ func (b *BinaryBallot) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+// UnmarshalJSON implements json unmarshal
+func (b *BinaryBallot) UnmarshalJSON(data []byte) error {
+	var obj JSONBinaryBallot
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+
+	return b.FromJSONBinaryBallot(&obj)
 }

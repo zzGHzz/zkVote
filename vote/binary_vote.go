@@ -8,8 +8,8 @@ import (
 
 // BinaryVote structure
 type BinaryVote struct {
-	gkX, gkY       *big.Int // authority's public key
-	hashedAuthData []byte   // address of authorty
+	gkX, gkY *big.Int // authority's public key
+	authData *big.Int // address of authorty
 
 	minVoter, maxVoter uint // min and max number of votes
 
@@ -22,7 +22,7 @@ type BinaryVote struct {
 }
 
 // NewBinaryVote news a yes-or-no vote
-func NewBinaryVote(minVoter, maxVoter uint, gkX, gkY *big.Int, authData []byte) (*BinaryVote, error) {
+func NewBinaryVote(minVoter, maxVoter uint, gkX, gkY *big.Int, authData *big.Int) (*BinaryVote, error) {
 	if !isOnCurve(gkX, gkY) {
 		return nil, errors.New("Invalid g^k")
 	}
@@ -37,8 +37,8 @@ func NewBinaryVote(minVoter, maxVoter uint, gkX, gkY *big.Int, authData []byte) 
 
 	vote.gkX = new(big.Int).Set(gkX)
 	vote.gkY = new(big.Int).Set(gkY)
-	z := sha256.Sum256(authData)
-	vote.hashedAuthData = z[:]
+
+	vote.authData = new(big.Int).Set(authData)
 	vote.ballots = make(map[[32]byte]*BinaryBallot)
 
 	vote.HX = big.NewInt(0)
@@ -57,12 +57,12 @@ func (v *BinaryVote) newBinaryTally() *BinaryTally {
 		new(big.Int).Set(v.YX), new(big.Int).Set(v.YY),
 
 		uint64(len(v.ballots)),
-		v.hashedAuthData,
+		new(big.Int).Set(v.authData),
 	}
 }
 
 // Cast casts a ballot
-func (v *BinaryVote) Cast(bt Ballot, data []byte) error {
+func (v *BinaryVote) Cast(bt Ballot, data *big.Int) error {
 	b, ok := bt.(*BinaryBallot)
 	if !ok {
 		return errors.New("Invalid ballot type")
@@ -72,7 +72,7 @@ func (v *BinaryVote) Cast(bt Ballot, data []byte) error {
 		return err
 	}
 
-	id := sha256.Sum256(data)
+	id := sha256.Sum256(data.Bytes())
 	if old, ok := v.ballots[id]; ok {
 		iOldhX, iOldhY := new(big.Int).Set(old.hX), new(big.Int).Sub(curve.Params().P, old.hY)
 		v.HX, v.HY = curve.Add(v.HX, v.HY, iOldhX, iOldhY)
