@@ -8,7 +8,11 @@ import (
 
 // BigIntToHexStr converts big int to hex string
 func BigIntToHexStr(i *big.Int) string {
-	return "0x" + i.Text(16)
+	h := i.Text(16)
+	if len(h)%2 == 1 {
+		h = "0" + h // make sure that the length is even
+	}
+	return "0x" + h
 }
 
 // HexStrToBigInt converts hex string to big int
