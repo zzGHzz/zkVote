@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,7 +20,7 @@ import (
 )
 
 var (
-	inFileFlag *cli.StringFlag = &cli.StringFlag{
+	inFileFlag *cli.StringSliceFlag = &cli.StringSliceFlag{
 		Name:     "in_file",
 		Aliases:  []string{"i"},
 		Required: true,
@@ -42,6 +45,25 @@ func main() {
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
+				Name:  "gen-priv-key",
+				Usage: "Generate private key",
+				Flags: []cli.Flag{
+					outDirFlag,
+					fileFlag,
+				},
+				Action: genPrivKey,
+			},
+			{
+				Name:  "gen-bin",
+				Usage: "Generate binary ballots",
+				Flags: []cli.Flag{
+					inFileFlag,
+					outDirFlag,
+					fileFlag,
+				},
+				Action: genBinaryBallots,
+			},
+			{
 				Name:  "bat-ver-bin",
 				Usage: "Batch verify yes/no ballots",
 				Flags: []cli.Flag{
@@ -51,14 +73,13 @@ func main() {
 				Action: batchVerifyBinaryBallots,
 			},
 			{
-				Name:  "bat-gen-bin",
-				Usage: "Batch generate binary ballots",
+				Name:  "tally",
+				Usage: "Tally voting result",
 				Flags: []cli.Flag{
 					inFileFlag,
 					outDirFlag,
-					fileFlag,
 				},
-				Action: genBinaryBallots,
+				Action: tally,
 			},
 			{
 				Name:  "gen-rand-bin",
@@ -89,6 +110,36 @@ func main() {
 	}
 }
 
+func genPrivKey(ctx *cli.Context) error {
+	outDir := ctx.String(outDirFlag.Name)
+	if _, err := os.Stat(outDir); os.IsNotExist(err) {
+		return fmt.Errorf("Output dir [%s] does not exist", outDir)
+	}
+
+	a, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return err
+	}
+
+	file := ctx.String(fileFlag.Name)
+	if file == "" {
+		file = "priv-key.json"
+	}
+	data, err := json.Marshal(Key{
+		K: "0x" + a.D.Text(16),
+		X: "0x" + a.PublicKey.X.Text(16),
+		Y: "0x" + a.PublicKey.Y.Text(16),
+	})
+	if err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(file, data, 0700); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func genBinaryBallots(ctx *cli.Context) error {
 	var (
 		a, gkX, gkY, addr *big.Int
@@ -98,7 +149,7 @@ func genBinaryBallots(ctx *cli.Context) error {
 		ballots []*vote.BinaryBallot
 	)
 
-	data, err = ioutil.ReadFile(ctx.String(inFileFlag.Name))
+	data, err = ioutil.ReadFile(ctx.StringSlice(inFileFlag.Name)[0])
 	if err != nil {
 		return err
 	}
@@ -139,25 +190,39 @@ func genBinaryBallots(ctx *cli.Context) error {
 		ballots = append(ballots, b)
 	}
 
-	// Write into file
+	file := ctx.String(fileFlag.Name)
+	if file == "" {
+		file = "bin-ballot.json"
+	}
 	data, err = json.Marshal(ballots)
 	if err != nil {
 		return err
-	}
-	file := ctx.String(fileFlag.Name)
-	if file == "" {
-		file = "ballots.json"
 	}
 	err = ioutil.WriteFile(filepath.Join(outDir, file), data, 0700)
 	if err != nil {
 		return err
 	}
 
+	// for i, b := range ballots {
+	// 	fname := fmt.Sprintf("bin-ballot-%d.json", i)
+
+	// 	// Write into file
+	// 	data, err = json.Marshal(b)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+
+	// 	err = ioutil.WriteFile(filepath.Join(outDir, fname), data, 0700)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+
 	return nil
 }
 
 func batchVerifyBinaryBallots(ctx *cli.Context) error {
-	data, err := ioutil.ReadFile(ctx.String(inFileFlag.Name))
+	data, err := ioutil.ReadFile(ctx.StringSlice(inFileFlag.Name)[0])
 	if err != nil {
 		return err
 	}
@@ -187,7 +252,7 @@ func batchVerifyBinaryBallots(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(outDir, "invalid-addrs.json"), data, 0700)
+	err = ioutil.WriteFile(filepath.Join(outDir, "invalid-bin-addrs.json"), data, 0700)
 	if err != nil {
 		return err
 	}
@@ -198,6 +263,100 @@ func batchVerifyBinaryBallots(ctx *cli.Context) error {
 	}
 	err = ioutil.WriteFile(filepath.Join(outDir, "valid-bin-ballots.json"), data, 0700)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func tally(ctx *cli.Context) error {
+	outDir := ctx.String(outDirFlag.Name)
+	if _, err := os.Stat(outDir); os.IsNotExist(err) {
+		return errors.New("out_dir does not exist")
+	}
+
+	inFiles := ctx.StringSlice(inFileFlag.Name)
+	if len(inFiles) < 2 {
+		return errors.New("Not enough input files")
+	}
+
+	data1, err := ioutil.ReadFile(inFiles[0])
+	if err != nil {
+		return err
+	}
+	data2, err := ioutil.ReadFile(inFiles[1])
+	if err != nil {
+		return err
+	}
+
+	var (
+		ballots  []*vote.BinaryBallot
+		authData AuthDataForTally
+	)
+
+	if err := json.Unmarshal(data1, &authData); err != nil {
+		if err := json.Unmarshal(data2, &authData); err != nil {
+			return err
+		}
+		if err := json.Unmarshal(data1, &ballots); err != nil {
+			return err
+		}
+	} else if err := json.Unmarshal(data2, &ballots); err != nil {
+		return err
+	}
+
+	var invalids []string
+	var valids []*vote.BinaryBallot
+	for _, ballot := range ballots {
+		if err := ballot.VerifyBallot(); err != nil {
+			obj := ballot.BuildJSONBinaryBallot()
+			invalids = append(invalids, obj.Proof.Data)
+		} else {
+			valids = append(valids, ballot)
+		}
+	}
+
+	var (
+		gkX, gkY, k, addr *big.Int
+		tal               *vote.BinaryTally
+		res               *vote.BinaryTallyRes
+		data              []byte
+	)
+
+	if gkX, err = common.HexStrToBigInt(authData.GKX); err != nil {
+		return err
+	}
+	if gkY, err = common.HexStrToBigInt(authData.GKY); err != nil {
+		return err
+	}
+	if k, err = common.HexStrToBigInt(authData.K); err != nil {
+		return err
+	}
+	if addr, err = common.HexStrToBigInt(authData.Address); err != nil {
+		return err
+	}
+
+	if tal, err = vote.NewBinaryTally(gkX, gkY, addr, valids); err != nil {
+		return err
+	}
+
+	if res, err = tal.Tally(k); err != nil {
+		return err
+	}
+
+	// write tally result
+	if data, err = json.Marshal(res); err != nil {
+		return err
+	}
+	if err = ioutil.WriteFile(filepath.Join(outDir, "bin-tally-res.json"), data, 0700); err != nil {
+		return err
+	}
+
+	// write addresses of the invalid ballots
+	if data, err = json.Marshal(invalids); err != nil {
+		return err
+	}
+	if err = ioutil.WriteFile(filepath.Join(outDir, "invalid-bin-addr.json"), data, 0700); err != nil {
 		return err
 	}
 
@@ -251,7 +410,11 @@ func genInvalidBallots(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(outDir, ctx.String(fileFlag.Name)), data, 0700); err != nil {
+	file := ctx.String(fileFlag.Name)
+	if file == "" {
+		file = "invalid-bin-ballots.json"
+	}
+	if err := ioutil.WriteFile(filepath.Join(outDir, file), data, 0700); err != nil {
 		return err
 	}
 

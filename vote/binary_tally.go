@@ -7,25 +7,24 @@ import (
 	"math/big"
 
 	"github.com/zzGHzz/zkVote/common"
-
 	"github.com/zzGHzz/zkVote/zk"
 )
 
 // BinaryTally structure
 type BinaryTally struct {
 	gkX, gkY *big.Int
-
-	HX, HY   *big.Int // H = prod_i h_i = prod_i g^a_i
-	YX, YY   *big.Int // Y = prod_i y_i = prod_i g^{a_i*k + v_i}
-	nVoter   uint64   // number of ballots
 	authData *big.Int
+
+	HX, HY *big.Int // H = prod_i h_i = prod_i g^a_i
+	YX, YY *big.Int // Y = prod_i y_i = prod_i g^{a_i*k + v_i}
+	n      int      // number of ballots
 }
 
 // BinaryTallyRes structure
 type BinaryTallyRes struct {
 	// gkX, gkY *big.Int
 
-	V uint64 // V = sum_i v_i
+	V int // V = sum_i v_i
 	// HX, HY *big.Int // h = prod_i g^a_i
 	XX, XY *big.Int // X = h^k
 	YX, YY *big.Int // Y = X * g^v
@@ -34,7 +33,43 @@ type BinaryTallyRes struct {
 	proof *zk.ECFSProof // zkp proves the correctness of h^k
 }
 
+// NewBinaryTally creates a new tally
+func NewBinaryTally(gkX, gkY, authData *big.Int, ballots []*BinaryBallot) (*BinaryTally, error) {
+	if !isOnCurve(gkX, gkY) {
+		return nil, errors.New("Invalid authority public key")
+	}
+
+	HX := new(big.Int)
+	HY := new(big.Int)
+	YX := new(big.Int)
+	YY := new(big.Int)
+
+	for _, b := range ballots {
+		if err := b.VerifyBallot(); err != nil {
+			return nil, err
+		}
+
+		HX, HY = curve.Add(HX, HY, b.hX, b.hY)
+		YX, YY = curve.Add(YX, YY, b.yX, b.yY)
+	}
+
+	return &BinaryTally{
+		gkX:      new(big.Int).Set(gkX),
+		gkY:      new(big.Int).Set(gkY),
+		authData: new(big.Int).Set(authData),
+		HX:       HX,
+		HY:       HY,
+		YX:       YX,
+		YY:       YY,
+		n:        len(ballots),
+	}, nil
+}
+
 // Tally computes result and zk proof
+func (t *BinaryTally) Tally(k *big.Int) (*BinaryTallyRes, error) {
+	return t.tally(k)
+}
+
 func (t *BinaryTally) tally(k *big.Int) (*BinaryTallyRes, error) {
 	if !isInRange(k) {
 		return nil, errors.New("Invalid k")
@@ -56,14 +91,14 @@ func (t *BinaryTally) tally(k *big.Int) (*BinaryTallyRes, error) {
 
 	// power break v
 	X, Y := big.NewInt(0), big.NewInt(0)
-	V := uint64(0)
+	V := 0
 	for {
 		V = V + 1
 		X, Y = curve.Add(X, Y, curve.Params().Gx, curve.Params().Gy)
 		if X.Cmp(gVX) == 0 && Y.Cmp(gVY) == 0 {
 			break
 		}
-		if V > t.nVoter {
+		if V > t.n {
 			return nil, errors.New("Tally failed")
 		}
 	}
@@ -133,7 +168,7 @@ func (r *BinaryTallyRes) String() (string, string) {
 
 // JSONBinaryTallyRes defines json object
 type JSONBinaryTallyRes struct {
-	V     uint64            `json:"v"`
+	V     int               `json:"v"`
 	XX    string            `json:"xx"`
 	XY    string            `json:"xy"`
 	YX    string            `json:"yx"`

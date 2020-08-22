@@ -11,7 +11,7 @@ type BinaryVote struct {
 	gkX, gkY *big.Int // authority's public key
 	authData *big.Int // address of authorty
 
-	minVoter, maxVoter uint // min and max number of votes
+	// minVoter, maxVoter uint // min and max number of votes
 
 	ballots map[[32]byte]*BinaryBallot // binary ballots
 
@@ -22,18 +22,18 @@ type BinaryVote struct {
 }
 
 // NewBinaryVote news a yes-or-no vote
-func NewBinaryVote(minVoter, maxVoter uint, gkX, gkY *big.Int, authData *big.Int) (*BinaryVote, error) {
+func NewBinaryVote(gkX, gkY *big.Int, authData *big.Int) (*BinaryVote, error) {
 	if !isOnCurve(gkX, gkY) {
 		return nil, errors.New("Invalid g^k")
 	}
 
 	vote := new(BinaryVote)
 
-	if maxVoter == 0 || minVoter > maxVoter {
-		return nil, errors.New("Invalid voter number setting")
-	}
-	vote.maxVoter = maxVoter
-	vote.minVoter = minVoter
+	// if maxVoter == 0 || minVoter > maxVoter {
+	// 	return nil, errors.New("Invalid voter number setting")
+	// }
+	// vote.maxVoter = maxVoter
+	// vote.minVoter = minVoter
 
 	vote.gkX = new(big.Int).Set(gkX)
 	vote.gkY = new(big.Int).Set(gkY)
@@ -53,11 +53,10 @@ func NewBinaryVote(minVoter, maxVoter uint, gkX, gkY *big.Int, authData *big.Int
 func (v *BinaryVote) newBinaryTally() *BinaryTally {
 	return &BinaryTally{
 		new(big.Int).Set(v.gkX), new(big.Int).Set(v.gkY),
+		new(big.Int).Set(v.authData),
 		new(big.Int).Set(v.HX), new(big.Int).Set(v.HY),
 		new(big.Int).Set(v.YX), new(big.Int).Set(v.YY),
-
-		uint64(len(v.ballots)),
-		new(big.Int).Set(v.authData),
+		len(v.ballots),
 	}
 }
 
@@ -79,11 +78,12 @@ func (v *BinaryVote) Cast(bt Ballot, data *big.Int) error {
 
 		iOldyX, iOldyY := new(big.Int).Set(old.yX), new(big.Int).Sub(curve.Params().P, old.yY)
 		v.YX, v.YY = curve.Add(v.YX, v.YY, iOldyX, iOldyY)
-	} else {
-		if uint(len(v.ballots)) >= v.maxVoter {
-			return errors.New("Max number of voters reached")
-		}
 	}
+	// else {
+	// 	if uint(len(v.ballots)) >= v.maxVoter {
+	// 		return errors.New("Max number of voters reached")
+	// 	}
+	// }
 
 	v.HX, v.HY = curve.Add(v.HX, v.HY, b.hX, b.hY)
 	v.YX, v.YY = curve.Add(v.YX, v.YY, b.yX, b.yY)
@@ -99,9 +99,9 @@ func (v *BinaryVote) Tally(k *big.Int) error {
 		return errors.New("Invalid k")
 	}
 
-	if uint(len(v.ballots)) < v.minVoter {
-		return errors.New("Min number of voters unreached")
-	}
+	// if uint(len(v.ballots)) < v.minVoter {
+	// 	return errors.New("Min number of voters unreached")
+	// }
 
 	t := v.newBinaryTally()
 
