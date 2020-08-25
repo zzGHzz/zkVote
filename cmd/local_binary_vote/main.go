@@ -72,7 +72,7 @@ func main() {
 	nVote := uint(5)
 
 	fmt.Printf("Init a vote for %d voters\n\n", nVote)
-	v, _ := vote.NewBinaryVote(nVote, nVote, gkX, gkY, authAddr)
+	v, _ := vote.NewBinaryVote(gkX, gkY, authAddr)
 
 	printline()
 	fmt.Println()
@@ -154,7 +154,7 @@ func main() {
 
 	fmt.Printf("\nZKProof verification: PASS\n")
 
-	if res.V != uint64(nYes) {
+	if res.V != nYes {
 		panic("Invalid number of Yes votes")
 	}
 

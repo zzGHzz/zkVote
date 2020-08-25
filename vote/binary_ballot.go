@@ -94,23 +94,32 @@ func (b *BinaryBallot) String() (string, string) {
 	return fmt.Sprintf("h = (%x, %x); y = (%x, %x)", b.hX, b.hY, b.yX, b.yY), b.proof.String()
 }
 
-// JSONBinaryBallot JSON
-type JSONBinaryBallot struct {
-	HX    string              `json:"hx"`
-	HY    string              `json:"hy"`
-	YX    string              `json:"yx"`
-	YY    string              `json:"yy"`
-	Proof *zk.JSONBinaryProof `json:"proof"`
-}
-
 // BuildJSONBinaryBallot builds JSON object
 func (b *BinaryBallot) BuildJSONBinaryBallot() *JSONBinaryBallot {
+	_p := b.proof.BuildJSONBinaryProof()
+
 	return &JSONBinaryBallot{
-		HX:    common.BigIntToHexStr(b.hX),
-		HY:    common.BigIntToHexStr(b.hY),
-		YX:    common.BigIntToHexStr(b.yX),
-		YY:    common.BigIntToHexStr(b.yY),
-		Proof: b.proof.BuildJSONBinaryProof(),
+		HX: common.BigIntToHexStr(b.hX),
+		HY: common.BigIntToHexStr(b.hY),
+		YX: common.BigIntToHexStr(b.yX),
+		YY: common.BigIntToHexStr(b.yY),
+		Proof: &JSONCompressedBinaryProof{
+			Data: _p.Data,
+			GKX:  _p.GKX,
+			GKY:  _p.GKY,
+			D1:   _p.D1,
+			D2:   _p.D2,
+			R1:   _p.R1,
+			R2:   _p.R2,
+			A1X:  _p.A1X,
+			A1Y:  _p.A1Y,
+			B1X:  _p.B1X,
+			B1Y:  _p.B1Y,
+			A2X:  _p.A2X,
+			A2Y:  _p.A2Y,
+			B2X:  _p.B2X,
+			B2Y:  _p.B2Y,
+		},
 	}
 }
 
@@ -140,7 +149,32 @@ func (b *BinaryBallot) FromJSONBinaryBallot(obj *JSONBinaryBallot) error {
 	if b.proof == nil {
 		b.proof = new(zk.BinaryProof)
 	}
-	if err = b.proof.FromJSONBinaryProof(obj.Proof); err != nil {
+
+	_p := obj.Proof
+	p := &zk.JSONBinaryProof{
+		Data: _p.Data,
+		GKX:  _p.GKX,
+		GKY:  _p.GKY,
+		D1:   _p.D1,
+		D2:   _p.D2,
+		R1:   _p.R1,
+		R2:   _p.R2,
+		A1X:  _p.A1X,
+		A1Y:  _p.A1Y,
+		B1X:  _p.B1X,
+		B1Y:  _p.B1Y,
+		A2X:  _p.A2X,
+		A2Y:  _p.A2Y,
+		B2X:  _p.B2X,
+		B2Y:  _p.B2Y,
+
+		GAX: obj.HX,
+		GAY: obj.HY,
+		YX:  obj.YX,
+		YY:  obj.YY,
+	}
+
+	if err = b.proof.FromJSONBinaryProof(p); err != nil {
 		return err
 	}
 

@@ -125,18 +125,6 @@ func (p *ECFSProof) String() string {
 		p.hX, p.hY, p.yX, p.yY, p.tX, p.tY, p.r)
 }
 
-// JSONECFSProof defines json object
-type JSONECFSProof struct {
-	Data string `json:"data"`
-	HX   string `json:"hx"`
-	HY   string `json:"hy"`
-	YX   string `json:"yx"`
-	YY   string `json:"yy"`
-	TX   string `json:"tx"`
-	TY   string `json:"ty"`
-	R    string `json:"r"`
-}
-
 // BuildJSONJSONECFSProof returns json object
 func (p *ECFSProof) BuildJSONJSONECFSProof() *JSONECFSProof {
 	return &JSONECFSProof{

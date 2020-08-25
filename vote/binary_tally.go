@@ -166,25 +166,24 @@ func (r *BinaryTallyRes) String() (string, string) {
 	return fmt.Sprintf("No. YES = %d", r.V), r.proof.String()
 }
 
-// JSONBinaryTallyRes defines json object
-type JSONBinaryTallyRes struct {
-	V     int               `json:"v"`
-	XX    string            `json:"xx"`
-	XY    string            `json:"xy"`
-	YX    string            `json:"yx"`
-	YY    string            `json:"yy"`
-	Proof *zk.JSONECFSProof `json:"proof"`
-}
-
 // BuildJSONBinaryTallyRes builds json object
 func (r *BinaryTallyRes) BuildJSONBinaryTallyRes() *JSONBinaryTallyRes {
+	_p := r.proof.BuildJSONJSONECFSProof()
+
 	return &JSONBinaryTallyRes{
-		V:     r.V,
-		XX:    common.BigIntToHexStr(r.XX),
-		XY:    common.BigIntToHexStr(r.XY),
-		YX:    common.BigIntToHexStr(r.YX),
-		YY:    common.BigIntToHexStr(r.YY),
-		Proof: r.proof.BuildJSONJSONECFSProof(),
+		V:  r.V,
+		XX: common.BigIntToHexStr(r.XX),
+		XY: common.BigIntToHexStr(r.XY),
+		YX: common.BigIntToHexStr(r.YX),
+		YY: common.BigIntToHexStr(r.YY),
+		Proof: &JSONCompressedECFSProof{
+			Data: _p.Data,
+			HX:   _p.HX,
+			HY:   _p.HY,
+			TX:   _p.TX,
+			TY:   _p.TY,
+			R:    _p.R,
+		},
 	}
 }
 
@@ -223,7 +222,21 @@ func (r *BinaryTallyRes) FromJSONBinaryTallyRes(obj *JSONBinaryTallyRes) error {
 	if r.proof == nil {
 		r.proof = new(zk.ECFSProof)
 	}
-	if err := r.proof.FromJSONECFSProof(obj.Proof); err != nil {
+
+	_p := obj.Proof
+	p := &zk.JSONECFSProof{
+		Data: _p.Data,
+		HX:   _p.HX,
+		HY:   _p.HY,
+		TX:   _p.TX,
+		TY:   _p.TY,
+		R:    _p.R,
+
+		YX: obj.XX,
+		YY: obj.XY,
+	}
+
+	if err := r.proof.FromJSONECFSProof(p); err != nil {
 		return err
 	}
 

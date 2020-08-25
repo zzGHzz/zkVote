@@ -277,29 +277,6 @@ func (p *BinaryProof) String() string {
 		p.a1X, p.a1Y, p.b1X, p.b1Y, p.d1, p.r1, p.a2X, p.a2Y, p.b2X, p.b2Y, p.d2, p.r2)
 }
 
-// JSONBinaryProof struct
-type JSONBinaryProof struct {
-	Data string `json:"data"`
-	GAX  string `json:"gax"`
-	GAY  string `json:"gay"`
-	GKX  string `json:"gkx"`
-	GKY  string `json:"gky"`
-	YX   string `json:"yx"`
-	YY   string `json:"yy"`
-	D1   string `json:"d1"`
-	D2   string `json:"d2"`
-	R1   string `json:"r1"`
-	R2   string `json:"r2"`
-	A1X  string `json:"a1x"`
-	A1Y  string `json:"a1y"`
-	B1X  string `json:"b1x"`
-	B1Y  string `json:"b1y"`
-	A2X  string `json:"a2x"`
-	A2Y  string `json:"a2y"`
-	B2X  string `json:"b2x"`
-	B2Y  string `json:"b2y"`
-}
-
 // MarshalJSON implements MarshalJSON
 func (p *BinaryProof) MarshalJSON() ([]byte, error) {
 	return json.Marshal(p.BuildJSONBinaryProof())

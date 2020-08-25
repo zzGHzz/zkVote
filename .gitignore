@@ -3,5 +3,7 @@ cmd/local_binary_vote/*.json
 cmd/zkvote/zkvote
 cmd/zkvote/*.json
 
+bin
+
 .DS_Store
 .vscode
