@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This Go package implements the off-chain operations related the voting protocol described in [here](https://github.com/zzGHzz/zkVoteContract/blob/master/protocol.md). By default, the package uses the P256 or Secp256r1 elliptic curve (EC) which is also used by [contracts](https://github.com/zzGHzz/zkVoteContract) developed for implementing the on-chain operations of the protocol.
+This Go package implements the off-chain operations related the voting protocol described in [here](https://github.com/zzGHzz/zkVoteContract/blob/master/protocol.md). By default, the package uses the [P256 or Secp256r1](https://www.secg.org/sec2-v2.pdf) elliptic curve (EC) which is also used by [contracts](https://github.com/zzGHzz/zkVoteContract) developed for implementing the on-chain operations of the protocol.
 
 
 ## Installation
