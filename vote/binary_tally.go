@@ -125,6 +125,11 @@ func (t *BinaryTally) tally(k *big.Int) (*BinaryTallyRes, error) {
 }
 
 // Verify verifies tally result
+func (r *BinaryTallyRes) Verify() error {
+	return r.verify()
+}
+
+// Verify verifies tally result
 func (r *BinaryTallyRes) verify() error {
 	// if !isOnCurve(r.gkX, r.gkY) {
 	// 	return errors.New("Invalid g^k")

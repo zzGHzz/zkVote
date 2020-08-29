@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -77,6 +78,14 @@ func main() {
 					outFlag,
 				},
 				Action: tally,
+			},
+			{
+				Name:  "ver-tally",
+				Usage: "Verify tally result",
+				Flags: []cli.Flag{
+					inFlag,
+				},
+				Action: verifyTallyResult,
 			},
 		},
 	}
@@ -340,6 +349,27 @@ func tally(ctx *cli.Context) error {
 	if err = ioutil.WriteFile(filepath.Join(outDir, "invalid-bin-addr.json"), data, 0700); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func verifyTallyResult(ctx *cli.Context) error {
+	data, err := ioutil.ReadFile(ctx.StringSlice(inFlag.Name)[0])
+	if err != nil {
+		return err
+	}
+
+	var res *vote.BinaryTallyRes
+
+	if err := json.Unmarshal(data, &res); err != nil {
+		return err
+	}
+
+	if err := res.Verify(); err != nil {
+		fmt.Println("Verify tally result: FAIL")
+	}
+
+	fmt.Println("Verify tally result: PASS")
 
 	return nil
 }
