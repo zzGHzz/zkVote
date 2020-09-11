@@ -83,23 +83,23 @@ func (t *BinaryTally) tally(k *big.Int) (*BinaryTallyRes, error) {
 	// X = h^k where h = prod_i g^a_i
 	XX, XY := curve.ScalarMult(t.HX, t.HY, k.Bytes())
 
-	// Get inv(X)
-	iXX, iXY := new(big.Int).Set(XX), new(big.Int).Sub(curve.Params().P, XY)
-
-	// g^v = Y/X
-	gVX, gVY := curve.Add(t.YX, t.YY, iXX, iXY)
-
-	// power break v
-	X, Y := big.NewInt(0), big.NewInt(0)
 	V := 0
-	for {
-		V = V + 1
-		X, Y = curve.Add(X, Y, curve.Params().Gx, curve.Params().Gy)
-		if X.Cmp(gVX) == 0 && Y.Cmp(gVY) == 0 {
-			break
-		}
-		if V > t.n {
-			return nil, errors.New("Tally failed")
+	if XX.Cmp(t.YX) != 0 || XY.Cmp(t.YY) != 0 {
+		// g^v = Y/X
+		iXX, iXY := new(big.Int).Set(XX), new(big.Int).Sub(curve.Params().P, XY)
+		gVX, gVY := curve.Add(t.YX, t.YY, iXX, iXY)
+
+		// power break v
+		X, Y := big.NewInt(0), big.NewInt(0)
+		for {
+			V = V + 1
+			X, Y = curve.Add(X, Y, curve.Params().Gx, curve.Params().Gy)
+			if X.Cmp(gVX) == 0 && Y.Cmp(gVY) == 0 {
+				break
+			}
+			if V > t.n {
+				return nil, errors.New("Tally failed")
+			}
 		}
 	}
 
